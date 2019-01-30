@@ -13,16 +13,16 @@ export class Storage {
     const { path, createIfMissing, errorIfExists } = params;
     let basePath;
     if (!path) {
-      basePath = `${os.homedir()}/.bitcore`;
+      basePath = `${os.homedir()}/.ltzcore`;
       try {
         fs.mkdirSync(basePath);
       } catch (e) {
         if (e.errno !== -17) {
-          console.error('Unable to create bitcore storage directory');
+          console.error('Unable to create ltzcore storage directory');
         }
       }
     }
-    this.path = path || `${basePath}/bitcoreWallet`;
+    this.path = path || `${basePath}/ltzcoreWallet`;
     if (!createIfMissing) {
       const walletExists =
         fs.existsSync(this.path) &&

@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 const bitcoreLibs = {
-  BTC: require('ltzcore-lib'),
-  BCH: require('bitcore-lib-cash')
+  LTZ: require('ltzcore-lib')
 };
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');

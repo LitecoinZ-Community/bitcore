@@ -7,12 +7,12 @@ const promptly = require('promptly');
 program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option('--chain <chain>', 'REQUIRED - Chain (BTC/BCH/ETH, etc)')
+  .option('--chain <chain>', 'REQUIRED - Chain (LTZ)')
   .option(
     '--network <network>',
     'REQUIRED - Network (livenet/testnet/regtest, etc)'
   )
-  .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
+  .option('--baseUrl [host]', 'optional - Specify custom ltzcore API URL')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--mnemonic [phrase]', 'optional - Seed using existing backup phrase')
   .parse(process.argv);

@@ -46,7 +46,7 @@ export class Wallet {
     if (this.baseUrl) {
       this.baseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
     } else {
-      this.baseUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
+      this.baseUrl = `https://api.litecoinz.org/api/${this.chain}/${this.network}`;
     }
     this.client = new Client({
       baseUrl: this.baseUrl,

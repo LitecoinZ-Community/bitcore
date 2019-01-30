@@ -1,6 +1,6 @@
 {
   "name": "ltzcore-client",
-  "description": "Wallet client for Bitcore node",
+  "description": "Wallet client for ltzcore node",
   "engines": {
     "node": ">=8.0.0"
   },
@@ -21,7 +21,6 @@
     "async": "^2.5.0",
     "bcrypt": "^2.0.1",
     "ltzcore-lib": "^8.0.0",
-    "bitcore-lib-cash": "^8.0.0",
     "ltzcore-mnemonic": "^8.0.0",
     "commander": "^2.15.1",
     "leveldown": "^3.0.0",

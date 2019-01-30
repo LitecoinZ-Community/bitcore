@@ -1,8 +1,6 @@
-import { BTCTxProvider } from './btc'
-import { BCHTxProvider } from './bch';
+import { LTZTxProvider } from './ltz';
 const providers = {
-  BTC: new BTCTxProvider(),
-  BCH: new BCHTxProvider()
+  LTZ: new LTZTxProvider()
 };
 
 export class TxProvider {

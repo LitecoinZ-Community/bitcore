@@ -1,4 +1,4 @@
-export class BTCTxProvider {
+export class LTZTxProvider {
   lib = require('ltzcore-lib');
 
   create({ recipients, utxos, change, fee }) {
