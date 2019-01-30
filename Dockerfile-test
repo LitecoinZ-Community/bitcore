@@ -7,11 +7,9 @@ COPY package*.json ./
 
 COPY  ./packages/ltzcore-client/package.json ./packages/ltzcore-client/package.json
 COPY  ./packages/ltzcore-build/package.json ./packages/ltzcore-build/package.json
-COPY  ./packages/bitcore-lib-cash/package.json ./packages/bitcore-lib-cash/package.json
 COPY  ./packages/ltzcore-lib/package.json ./packages/ltzcore-lib/package.json
 COPY  ./packages/ltzcore-mnemonic/package.json ./packages/ltzcore-mnemonic/package.json
 COPY  ./packages/ltzcore-node/package.json ./packages/ltzcore-node/package.json
-COPY  ./packages/bitcore-p2p-cash/package.json ./packages/bitcore-p2p-cash/package.json
 COPY  ./packages/ltzcore-p2p/package.json ./packages/ltzcore-p2p/package.json
 COPY  ./packages/ltzcore-wallet-client/package.json ./packages/ltzcore-wallet-client/package.json
 COPY  ./packages/ltzcore-wallet-service/package.json ./packages/ltzcore-wallet-service/package.json
