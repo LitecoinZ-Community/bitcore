@@ -1,17 +1,17 @@
 {
   "name": "ltzcore-build",
   "version": "8.0.0",
-  "description": "A helper for common tasks to build bitcore modules'",
+  "description": "A helper for common tasks to build ltzcore modules'",
   "main": "index.js",
   "scripts": {
     "test": "gulp test"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/bitpay/ltzcore-build"
+    "url": "git://github.com/LitecoinZ-Community/ltzcore-build"
   },
   "keywords": [
-    "bitcore"
+    "ltzcore"
   ],
   "contributors": [
     {
@@ -33,13 +33,17 @@
     {
       "name": "Matias Alejo Garcia",
       "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "The LitecoinZ Community",
+      "email": "community@litecoinz.org"
     }
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bitpay/ltzcore-build/issues"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-build/issues"
   },
-  "homepage": "https://github.com/bitpay/ltzcore-build",
+  "homepage": "https://github.com/LitecoinZ-Community/ltzcore-build",
   "dependencies": {
     "@kollavarsham/gulp-coveralls": "^0.2.2",
     "brfs": "^2.0.1",
@@ -49,7 +53,7 @@
     "gulp-mocha": "^6.0.0",
     "gulp-rename": "^1.4.0",
     "gulp-shell": "^0.6.5",
-    "gulp-uglify": "^2.1.2",
+    "gulp-uglify-es": "^1.0.4",
     "istanbul": "^0.4.5",
     "karma": "^3.1.1",
     "karma-chrome-launcher": "^2.2.0",
