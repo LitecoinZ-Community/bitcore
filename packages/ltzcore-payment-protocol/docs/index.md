@@ -1,5 +1,5 @@
 # Payment Protocol
-`PaymentProtocol` and associated functions and methods will serialize, deserialize, sign and verify payment protocol messages both in Node.js and web browsers. Both X.509 and [bitcoin identity protocol](https://en.bitcoin.it/wiki/Identity_protocol_v1) are supported. For detailed technical information, please view [BIP70](https://github.com/bitcoin/bips/blob/master/bip-0070.mediawiki).
+`PaymentProtocol` and associated functions and methods will serialize, deserialize, sign and verify payment protocol messages both in Node.js and web browsers. Both X.509 and [litecoinz identity protocol](https://en.bitcoin.it/wiki/Identity_protocol_v1) are supported. For detailed technical information, please view [BIP70](https://github.com/bitcoin/bips/blob/master/bip-0070.mediawiki).
 
 ## Installation
 Payment protocol is implemented as a separate module and you must add it to your dependencies:
@@ -141,7 +141,7 @@ var transactions = payment.get('transactions');
 var refund_to = payment.get('refund_to');
 var memo = payment.get('memo');
 
-// send the transaction to the bitcoin network
+// send the transaction to the litecoinz network
 ```
 
 ## Send a Payment Acknowledgement

@@ -1,11 +1,7 @@
-Bitcore Payment Protocol
+Ltzcore Payment Protocol
 =======
 
-[![NPM Package](https://img.shields.io/npm/v/ltzcore-payment-protocol.svg?style=flat-square)](https://www.npmjs.org/package/ltzcore-payment-protocol)
-[![Build Status](https://img.shields.io/travis/bitpay/ltzcore-payment-protocol.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/ltzcore-payment-protocol)
-[![Coverage Status](https://img.shields.io/coveralls/bitpay/ltzcore-payment-protocol.svg?style=flat-square)](https://coveralls.io/r/bitpay/ltzcore-payment-protocol)
-
-A module for [bitcore](https://github.com/bitpay/bitcore) that implements [Payment Protocol](https://github.com/bitcoin/bips/blob/master/bip-0070.mediawiki) and other related BIPs.
+A module for [ltzcore](https://github.com/LitecoinZ-Community/ltzcore) that implements [Payment Protocol](https://github.com/bitcoin/bips/blob/master/bip-0070.mediawiki) and other related BIPs.
 
 ## Getting Started
 
@@ -37,10 +33,10 @@ var verified = request.verify();
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/CONTRIBUTING.md) on the main bitcore repo for information about how to contribute.
+See [CONTRIBUTING.md](https://github.com/LitecoinZ-Community/ltzcore/blob/master/CONTRIBUTING.md) on the main ltzcore repo for information about how to contribute.
 
 ## License
 
-Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
+Code released under [the MIT license](https://github.com/LitecoinZ-Community/ltzcore/blob/master/LICENSE).
 
 Copyright 2013-2015 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.

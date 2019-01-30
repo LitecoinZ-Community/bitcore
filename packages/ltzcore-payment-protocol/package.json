@@ -1,7 +1,7 @@
 {
   "name": "ltzcore-payment-protocol",
   "version": "8.0.0",
-  "description": "Payment Protocol (BIP70 and related) support for bitcore",
+  "description": "Payment Protocol (BIP70 and related) support for ltzcore",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -36,17 +36,21 @@
     {
       "name": "Matias Alejo Garcia",
       "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "The LitecoinZ Community",
+      "email": "community@litecoinz.org"
     }
   ],
   "keywords": [
-    "bitcoin",
-    "bitcore",
+    "litecoinz",
+    "ltzcore",
     "payment protocol",
     "BIP70"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/ltzcore-payment-protocol.git"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-payment-protocol.git"
   },
   "browser": "lib/browser.js",
   "dependencies": {

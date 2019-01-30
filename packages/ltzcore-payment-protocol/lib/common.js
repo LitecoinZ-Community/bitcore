@@ -16,7 +16,7 @@ var varintBufNum = bitcore.encoding.BufferWriter.varintBufNum;
 function PaymentProtocol(currency) {
   this.messageType = null;
   this.message = null;
-  this.currency = currency || 'BTC';
+  this.currency = currency || 'LTZ';
 }
 
 PaymentProtocol.PAYMENT_REQUEST_MAX_SIZE = 50000;
@@ -28,17 +28,12 @@ PaymentProtocol.JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
 PaymentProtocol.JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 
 PaymentProtocol.LEGACY_PAYMENT = {
-  BTC: {},
-  BCH: {}
+  LTZ: {}
 };
 
-PaymentProtocol.LEGACY_PAYMENT.BTC.REQUEST_CONTENT_TYPE = 'application/bitcoin-paymentrequest';
-PaymentProtocol.LEGACY_PAYMENT.BTC.CONTENT_TYPE = 'application/bitcoin-payment';
-PaymentProtocol.LEGACY_PAYMENT.BTC.ACK_CONTENT_TYPE = 'application/bitcoin-paymentack';
-
-PaymentProtocol.LEGACY_PAYMENT.BCH.REQUEST_CONTENT_TYPE = 'application/bitcoincash-paymentrequest';
-PaymentProtocol.LEGACY_PAYMENT.BCH.CONTENT_TYPE = 'application/bitcoincash-payment';
-PaymentProtocol.LEGACY_PAYMENT.BCH.ACK_CONTENT_TYPE = 'application/bitcoincash-paymentack';
+PaymentProtocol.LEGACY_PAYMENT.LTZ.REQUEST_CONTENT_TYPE = 'application/litecoinz-paymentrequest';
+PaymentProtocol.LEGACY_PAYMENT.LTZ.CONTENT_TYPE = 'application/litecoinz-payment';
+PaymentProtocol.LEGACY_PAYMENT.LTZ.ACK_CONTENT_TYPE = 'application/litecoinz-paymentack';
 
 // https://www.google.com/search?q=signatureAlgorithm+1.2.840.113549.1.1.1
 // http://msdn.microsoft.com/en-us/library/windows/desktop/aa379057(v=vs.85).aspx
@@ -232,7 +227,7 @@ PaymentProtocol.prototype.makePaymentDetails = function(obj) {
 PaymentProtocol.prototype.makePaymentRequest = function(obj, currency) {
   this.messageType = 'PaymentRequest';
   this.message = new PaymentProtocol.PaymentRequest();
-  this.currency = this.currency || currency || 'BTC';
+  this.currency = this.currency || currency || 'LTZ';
   this.setObj(obj);
   return this;
 };
@@ -240,7 +235,7 @@ PaymentProtocol.prototype.makePaymentRequest = function(obj, currency) {
 PaymentProtocol.prototype.makePayment = function(obj, currency) {
   this.messageType = 'Payment';
   this.message = new PaymentProtocol.Payment();
-  this.currency = this.currency || currency || 'BTC';
+  this.currency = this.currency || currency || 'LTZ';
   this.setObj(obj);
   return this;
 };
@@ -248,7 +243,7 @@ PaymentProtocol.prototype.makePayment = function(obj, currency) {
 PaymentProtocol.prototype.makePaymentACK = function(obj, currency) {
   this.messageType = 'PaymentACK';
   this.message = new PaymentProtocol.PaymentACK();
-  this.currency = currency || 'BTC';
+  this.currency = currency || 'LTZ';
   this.setObj(obj);
   return this;
 };
@@ -397,7 +392,7 @@ PaymentProtocol.prototype.verify = function(returnTrust) {
 };
 
 function magicHash(str) {
-  var magicBytes = new Buffer('Bitcoin Signed Message:\n');
+  var magicBytes = new Buffer('LitecoinZ Signed Message:\n');
   var prefix1 = varintBufNum(magicBytes.length);
   var message = new Buffer(str);
   var prefix2 = varintBufNum(message.length);

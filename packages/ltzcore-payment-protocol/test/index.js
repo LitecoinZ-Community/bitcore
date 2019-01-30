@@ -233,25 +233,13 @@ describe('PaymentProtocol', function() {
       var valid = ack.isValidSize();
       valid.should.equal(true);
       var contentType = ack.getContentType();
-      contentType.should.equal(PaymentProtocol.LEGACY_PAYMENT['BTC'].ACK_CONTENT_TYPE);
+      contentType.should.equal(PaymentProtocol.LEGACY_PAYMENT['LTZ'].ACK_CONTENT_TYPE);
       var serialized = ack.serialize();
       serialized.length.should.be.greaterThan(0);
       var ack2 = new PaymentProtocol().makePaymentACK();
       ack2.deserialize(serialized, 'PaymentACK');
       var serialized2 = ack2.serialize();
       serialized.should.deep.equal(serialized2);
-    });
-
-    it('makePaymentACK BCH', function () {
-      var payment = new PaymentProtocol.Payment();
-      var ack = new PaymentProtocol().makePaymentACK(null, 'BCH');
-      ack.set('payment', payment);
-      ack.set('memo', 'this is a memo');
-      ack.get('memo').should.equal('this is a memo');
-      var valid = ack.isValidSize();
-      valid.should.equal(true);
-      var contentType = ack.getContentType();
-      contentType.should.equal(PaymentProtocol.LEGACY_PAYMENT['BCH'].ACK_CONTENT_TYPE);
     });
 
   });
@@ -299,7 +287,7 @@ describe('PaymentProtocol', function() {
       var paypro = new PaymentProtocol();
       paypro.makePayment();
       paypro.set('memo', 'test memo');
-      paypro.getContentType().should.equal('application/bitcoin-payment');
+      paypro.getContentType().should.equal('application/litecoinz-payment');
     });
 
   });
@@ -364,23 +352,7 @@ describe('PaymentProtocol', function() {
       var buf = paypro.serializeForSig();
       var valid = paypro.isValidSize();
       var contentType = paypro.getContentType();
-      contentType.should.equal(PaymentProtocol.LEGACY_PAYMENT['BTC'].REQUEST_CONTENT_TYPE);
-      valid.should.equal(true);
-      buf.length.should.be.greaterThan(0);
-    });
-
-    it('should serialize a BCH PaymentRequest and not fail', function() {
-      var pd = new PaymentProtocol.PaymentDetails();
-      pd.set('time', 0);
-      var pdbuf = pd.toBuffer();
-
-      var paypro = new PaymentProtocol('BCH');
-      paypro.makePaymentRequest();
-      paypro.set('serialized_payment_details', pdbuf);
-      var buf = paypro.serializeForSig();
-      var valid = paypro.isValidSize();
-      var contentType = paypro.getContentType();
-      contentType.should.equal(PaymentProtocol.LEGACY_PAYMENT['BCH'].REQUEST_CONTENT_TYPE);
+      contentType.should.equal(PaymentProtocol.LEGACY_PAYMENT['LTZ'].REQUEST_CONTENT_TYPE);
       valid.should.equal(true);
       buf.length.should.be.greaterThan(0);
     });
