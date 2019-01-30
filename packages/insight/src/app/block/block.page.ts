@@ -4,7 +4,7 @@ import { combineLatest, Observable, of } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from '../services/api/api.service';
 import { ConfigService } from '../services/config/config.service';
-import { IBlock } from '../types/bitcore-node';
+import { IBlock } from '../types/ltzcore-node';
 
 @Component({
   selector: 'app-block-page',

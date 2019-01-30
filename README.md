@@ -1,4 +1,4 @@
-Bitcore Node
+Ltzcore Node
 ============
 _Requirements_:
 - Trusted P2P Peer
@@ -7,22 +7,22 @@ _Requirements_:
 Checkout the repo
 
 ```
-git clone git@github.com:bitpay/bitcore.git
+git clone git@github.com:bitpay/ltzcore.git
 git checkout master
 npm install
 ```
 
 ## Setup Guide
 
-**1. Setup Bitcore config**
+**1. Setup Ltzcore config**
 
 <details>
-<summary>Example bitcore.config.json</summary>
+<summary>Example ltzcore.config.json</summary>
 <br>
 
 ```
 {
-  "bitcoreNode": {
+  "ltzcoreNode": {
     "chains": {
       "BTC": {
         "mainnet": {
@@ -112,7 +112,7 @@ irc=1
 upnp=1
 
 # Make sure port & rpcport matches the 
-# bitcore.config.json ports for BTC mainnet
+# ltzcore.config.json ports for BTC mainnet
 
 # if using Bitcoin Core v0.17+ prefix
 # [main]
@@ -140,7 +140,7 @@ rpcpassword=password
 </details>
 <br>
 
-**4. Start Bitcore**
+**4. Start Ltzcore**
 
 ```
 npm run node
@@ -148,20 +148,20 @@ npm run node
 
 ## API Documentation
 
-[REST API parameters and example responses](./packages/bitcore-node/docs/api-documentation.md)
+[REST API parameters and example responses](./packages/ltzcore-node/docs/api-documentation.md)
 
-[Websockets API namespaces, event names, and parameters](./packages/bitcore-node/docs/sockets-api.md)
+[Websockets API namespaces, event names, and parameters](./packages/ltzcore-node/docs/sockets-api.md)
 
-[Testing Bitcore-node in RegTest](./packages/bitcore-node/docs/wallet-guide.md)
+[Testing ltzcore-node in RegTest](./packages/ltzcore-node/docs/wallet-guide.md)
 
-[Wallet Guide - Creating, Signing, Import Address](./packages/bitcore-client/README.md)
+[Wallet Guide - Creating, Signing, Import Address](./packages/ltzcore-client/README.md)
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/bitpay/bitcore) on the main bitcore repo for information about how to contribute.
+See [CONTRIBUTING.md](https://github.com/bitpay/ltzcore) on the main ltzcore repo for information about how to contribute.
 
 ## License
 
-Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
+Code released under [the MIT license](https://github.com/bitpay/ltzcore/blob/master/LICENSE).
 
 Copyright 2015-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.

@@ -5,7 +5,7 @@ import {
   Input,
   Output
 } from '@angular/core';
-import * as bitcoreLib from 'bitcore-lib';
+import * as bitcoreLib from 'ltzcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import {
   ActionSheetController,

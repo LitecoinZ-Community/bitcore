@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { ConfigService } from '../services/config/config.service';
-import { Direction, IBlock, StreamingFindOptions } from '../types/bitcore-node';
+import { Direction, IBlock, StreamingFindOptions } from '../types/ltzcore-node';
 
 @Component({
   selector: 'app-blocks-page',

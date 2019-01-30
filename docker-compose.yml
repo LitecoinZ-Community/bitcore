@@ -7,9 +7,9 @@ services:
     volumes: 
     - /data/db:/data/db
     
-  bitcore-node:
+  ltzcore-node:
     build: .
-    image: bitcore-node
+    image: ltzcore-node
     links:
       - database
     ports:
@@ -22,6 +22,6 @@ services:
 #insight:
   #image: insight
   #links:
-    #- bitcore-node
+    #- ltzcore-node
   #environment:
-    #- API_URL=bitcore-node
+    #- API_URL=ltzcore-node

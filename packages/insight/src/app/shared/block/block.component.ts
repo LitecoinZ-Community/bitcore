@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { IBlock } from '../../types/bitcore-node';
+import { IBlock } from '../../types/ltzcore-node';
 
 @Component({
   selector: 'app-block',

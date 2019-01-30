@@ -1,2 +1,2 @@
-FROM bitcore-node
+FROM ltzcore-node
 CMD ["npm", "--prefix=./packages/insight", "start"]

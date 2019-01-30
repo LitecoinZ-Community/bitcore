@@ -8,7 +8,7 @@ import * as equal from 'fast-deep-equal';
 import { combineLatest, Observable } from 'rxjs';
 import { distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { ApiService } from '../../services/api/api.service';
-import { IBlock, StreamingFindOptions } from '../../types/bitcore-node';
+import { IBlock, StreamingFindOptions } from '../../types/ltzcore-node';
 import { Chain } from '../../types/chains';
 
 @Component({

@@ -11,8 +11,8 @@ services:
       - 3000:3000
     environment:
       - DB_HOST=db
-      - DB_NAME=bitcore-test
-      - BITCORE_CONFIG_PATH=/bitcore/bitcore-test.config.json
+      - DB_NAME=ltzcore-test
+      - BITCORE_CONFIG_PATH=/ltzcore/ltzcore-test.config.json
     depends_on:
       - db
       - bitcoin
@@ -35,7 +35,7 @@ services:
       -rpcport=8333
       -rpcallowip=172.0.0.0/8
       -rpcbind=0.0.0.0
-      -rpcuser=bitcorenodetest
+      -rpcuser=ltzcorenodetest
       -rpcpassword=local321
 
 networks:

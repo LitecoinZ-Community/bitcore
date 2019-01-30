@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-import * as bitcoreLib from 'bitcore-lib';
+import * as bitcoreLib from 'ltzcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import * as _ from 'lodash';
 import { Observable } from 'rxjs';

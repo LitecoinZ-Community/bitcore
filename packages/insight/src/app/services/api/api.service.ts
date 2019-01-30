@@ -4,7 +4,7 @@ import { retryBackoff } from 'backoff-rxjs';
 import { NGXLogger } from 'ngx-logger';
 import { BehaviorSubject, Observable, timer } from 'rxjs';
 import { finalize, map, shareReplay, switchMap } from 'rxjs/operators';
-import { IBlock, StreamingFindOptions } from '../../types/bitcore-node';
+import { IBlock, StreamingFindOptions } from '../../types/ltzcore-node';
 import { Chain, Chains } from '../../types/chains';
 import { RateListing } from '../../types/units';
 import { ConfigService } from '../config/config.service';
