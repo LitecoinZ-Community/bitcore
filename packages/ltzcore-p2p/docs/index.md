@@ -1,5 +1,5 @@
 # Peer-to-Peer
-The `ltzcore-p2p` module provides peer-to-peer networking capabilities for [Bitcore](https://github.com/bitpay/bitcore), and includes [Peer](peer.md) and [Pool](pool.md) classes. A [Message](messages.md) class is also exposed, in addition to [several types of messages](messages.md). Pool will maintain connection to several peers, Peers represents a node in the bitcoin network, and Message represents data sent to and from a Peer. For detailed technical information about the bitcoin protocol, please visit the [Protocol Specification](https://en.bitcoin.it/wiki/Protocol_specification) on the Bitcoin Wiki.
+The `ltzcore-p2p` module provides peer-to-peer networking capabilities for [ltzcore](https://github.com/LitecoinZ-Community/ltzcore), and includes [Peer](peer.md) and [Pool](pool.md) classes. A [Message](messages.md) class is also exposed, in addition to [several types of messages](messages.md). Pool will maintain connection to several peers, Peers represents a node in the litecoinz network, and Message represents data sent to and from a Peer. For detailed technical information about the litecoinz protocol, please visit the [Protocol Specification](https://en.bitcoin.it/wiki/Protocol_specification) on the Bitcoin Wiki.
 
 ## Installation
 Peer-to-peer is implemented as a separate module.

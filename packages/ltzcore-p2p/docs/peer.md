@@ -1,5 +1,5 @@
 # Peer
-Represents a node from the p2p bitcoin network. The Peer class supports connecting directly to other nodes or through a socks5 proxy like Tor.
+Represents a node from the p2p litecoinz network. The Peer class supports connecting directly to other nodes or through a socks5 proxy like Tor.
 
 ## Creating a peer
 The code to create a new peer looks like this:

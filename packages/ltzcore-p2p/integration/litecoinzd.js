@@ -38,8 +38,8 @@ var txHash = {
   'testnet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b'
 };
 
-// These tests require a running bitcoind instance
-describe('Integration with ' + network.name + ' bitcoind', function() {
+// These tests require a running litecoinzd instance
+describe('Integration with ' + network.name + ' litecoinzd', function() {
 
   this.timeout(15000);
   var opts = {

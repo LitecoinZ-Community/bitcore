@@ -1,7 +1,7 @@
 {
   "name": "ltzcore-p2p",
   "version": "8.0.0",
-  "description": "Interface to the bitcoin P2P network for bitcore",
+  "description": "Interface to the litecoinz P2P network for ltzcore",
   "main": "index.js",
   "scripts": {
     "lint": "gulp lint",
@@ -11,13 +11,19 @@
     "build": "gulp"
   },
   "keywords": [
-    "bitcoin",
-    "bitcore"
+    "litecoinz",
+    "ltzcore"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/ltzcore-p2p.git"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-p2p.git"
   },
+  "contributors": [
+    {
+      "name": "The LitecoinZ Community",
+      "email": "community@litecoinz.org"
+    }
+  ],
   "dependencies": {
     "ltzcore-lib": "^8.0.0",
     "bcoin": "1.0.0-beta.12",

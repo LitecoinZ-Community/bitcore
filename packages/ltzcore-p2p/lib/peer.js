@@ -13,8 +13,8 @@ var util = require('util');
 
 /**
  * The Peer constructor will create an instance of Peer to send and receive messages
- * using the standard Bitcoin protocol. A Peer instance represents one connection
- * on the Bitcoin network. To create a new peer connection provide the host and port
+ * using the standard LitecoinZ protocol. A Peer instance represents one connection
+ * on the LitecoinZ network. To create a new peer connection provide the host and port
  * options and then invoke the connect method. Additionally, a newly connected socket
  * can be provided instead of host and port.
  *

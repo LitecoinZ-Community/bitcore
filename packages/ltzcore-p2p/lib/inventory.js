@@ -8,7 +8,7 @@ var BufferWriter = bitcore.encoding.BufferWriter;
 var _ = bitcore.deps._;
 
 /**
- * A constructor for inventory related Bitcoin messages such as
+ * A constructor for inventory related LitecoinZ messages such as
  * "getdata", "inv" and "notfound".
  * @param {Object} obj
  * @param {Number} obj.type - Inventory.TYPE

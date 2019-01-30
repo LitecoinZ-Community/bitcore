@@ -32,7 +32,7 @@ describe('BloomFilter', function() {
     filter.toBuffer().should.deep.equal(testPayloadBuffer);
   });
 
-  // test data from: https://github.com/bitcoin/bitcoin/blob/master/src/test/bloom_tests.cpp
+  // test data from: https://github.com/litecoin-project/litecoinz/blob/master/src/test/bloom_tests.cpp
 
   it('serialize filter with public keys added', function() {
 

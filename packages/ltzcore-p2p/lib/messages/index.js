@@ -6,7 +6,7 @@ var Hash = bitcore.crypto.Hash;
 var $ = bitcore.util.preconditions;
 
 /**
- * A factory to build Bitcoin protocol messages.
+ * A factory to build LitecoinZ protocol messages.
  * @param {Object=} options
  * @param {Network=} options.network
  * @param {Function=} options.Block - A block constructor
