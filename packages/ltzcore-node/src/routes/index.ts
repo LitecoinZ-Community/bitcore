@@ -3,7 +3,6 @@ import { Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
 import { LogMiddleware, CacheMiddleware, CacheTimes, RateLimiter } from './middleware';
-import { Web3Proxy } from "./web3";
 
 const app = express();
 const bodyParser = require('body-parser');
@@ -77,6 +76,5 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
 });
 
 app.use('/api/:chain/:network', bootstrap('api'));
-app.use('/web3/:chain/:network', Web3Proxy);
 
 export default app;
