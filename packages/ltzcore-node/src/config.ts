@@ -8,7 +8,7 @@ function findConfig(): ConfigType | undefined {
   let foundConfig;
   const envConfigPath = process.env.BITCORE_CONFIG_PATH;
   const argConfigPath = program.config;
-  const configFileName = 'bitcore.config.json';
+  const configFileName = 'ltzcore.config.json';
   let bitcoreConfigPaths = [
     `${homedir()}/${configFileName}`,
     `../../../../${configFileName}`,
@@ -18,7 +18,7 @@ function findConfig(): ConfigType | undefined {
   if (overrideConfig) {
     bitcoreConfigPaths.unshift(overrideConfig);
   }
-  // No config specified. Search home, bitcore and cur directory
+  // No config specified. Search home, ltzcore and cur directory
   for (let path of bitcoreConfigPaths) {
     if (!foundConfig) {
       try {
@@ -55,7 +55,7 @@ const Config = function(): ConfigType {
     maxPoolSize: 50,
     port: 3000,
     dbHost: process.env.DB_HOST || '127.0.0.1',
-    dbName: process.env.DB_NAME || 'bitcore',
+    dbName: process.env.DB_NAME || 'ltzcore',
     dbPort: process.env.DB_PORT || '27017',
     numWorkers: cpus().length,
     chains: {},
@@ -82,15 +82,15 @@ const Config = function(): ConfigType {
   config = _.mergeWith(config, foundConfig, mergeCopyArray);
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {
-      BTC: {
+      LTZ: {
         mainnet: {
           chainSource: 'p2p',
-          trustedPeers: [{ host: '127.0.0.1', port: 8333 }],
+          trustedPeers: [{ host: '127.0.0.1', port: 29333 }],
           rpc: {
             host: '127.0.0.1',
-            port: 8332,
-            username: 'bitcoin',
-            password: 'bitcoin'
+            port: 29332,
+            username: 'username',
+            password: 'password'
           }
         }
       }

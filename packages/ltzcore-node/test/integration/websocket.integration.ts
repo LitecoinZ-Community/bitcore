@@ -9,7 +9,7 @@ import { Event } from '../../src/services/event';
 import { Api } from '../../src/services/api';
 
 const wait = time => new Promise(resolve => setTimeout(resolve, time));
-const chain = 'BTC';
+const chain = 'LTZ';
 const network = 'regtest';
 const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
@@ -79,7 +79,7 @@ describe('Websockets', function() {
     );
     let sawEvents = new Promise(resolve => {
       socket.on('connect', () => {
-        socket.emit('room', '/BTC/regtest/inv');
+        socket.emit('room', '/LTZ/regtest/inv');
       });
       socket.on('block', () => {
         hasSeenABlockEvent = true;
@@ -110,7 +110,7 @@ describe('Websockets', function() {
 
     let sawEvents = new Promise(resolve => {
       socket.on('connect', () => {
-        socket.emit('room', '/BTC/regtest/inv');
+        socket.emit('room', '/LTZ/regtest/inv');
       });
       socket.on('tx', () => {
         hasSeenTxEvent = true;

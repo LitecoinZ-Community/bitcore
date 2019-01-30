@@ -5,7 +5,7 @@ import { Storage } from '../../src/services/storage';
 async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
   const addresses = await CoinStorage.collection
-    .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
+    .find({ chain: 'LTZ', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
   return Object.keys(addresses.reduce((prev, a) => Object.assign(prev, { [a.address]: a.address }, {})));
@@ -14,7 +14,7 @@ async function getAllAddressesFromBlocks(start, end) {
 async function createWallet(addresses: string[], iteration) {
   const walletName = 'Benchmark Wallet' + iteration;
   const password = 'iamsatoshi';
-  const chain = 'BTC';
+  const chain = 'LTZ';
   const network = 'mainnet';
   const baseUrl = 'http://localhost:3000/api';
   let lockedWallet: Wallet;

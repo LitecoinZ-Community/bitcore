@@ -1,4 +1,4 @@
-Bitcore Node
+Ltzcore Node
 ============
 _Requirements_:
 - Trusted P2P Peer
@@ -7,33 +7,33 @@ _Requirements_:
 Checkout the repo
 
 ```
-git clone git@github.com:bitpay/bitcore.git
+git clone git@github.com:LitecoinZ-Community/ltzcore.git
 git checkout master
 npm install
 ```
 
-Set up your bitcore.config.json file in ./bitcore
+Set up your ltzcore.config.json file in ./ltzcore
 
-## Example bitcore.config.json
+## Example ltzcore.config.json
 
-bitcore.config.json file in ./bitcore
+ltzcore.config.json file in ./ltzcore
 
 ```
 {
   "bitcoreNode": {
     "chains": {
-      "BTC": {
+      "LTZ": {
         "mainnet": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
               "host": "127.0.0.1",
-              "port": 20008
+              "port": 29333
             }
           ],
           "rpc": {
             "host": "127.0.0.1",
-            "port": 20009,
+            "port": 29332,
             "username": "username",
             "password": "password"
           }
@@ -43,45 +43,12 @@ bitcore.config.json file in ./bitcore
           "trustedPeers": [
             {
               "host": "127.0.0.1",
-              "port": 20020
+              "port": 49444
             }
           ],
           "rpc": {
             "host": "127.0.0.1",
-            "port": 20021,
-            "username": "username",
-            "password": "password"
-          }
-        }
-      },
-      "BCH": {
-        "mainnet": {
-          "parentChain": "BTC",
-          "forkHeight": 478558,
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 30008
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 30009,
-            "username": "username",
-            "password": "password"
-          }
-        },
-        "regtest": {
-          "chainSource": "p2p",
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 30020
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 30021,
+            "port": 49443,
             "username": "username",
             "password": "password"
           }
@@ -107,10 +74,10 @@ npm run node
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/bitpay/bitcore) on the main bitcore repo for information about how to contribute.
+See [CONTRIBUTING.md](https://github.com/LitecoinZ-Community/ltzcore) on the main ltzcore repo for information about how to contribute.
 
 ## License
 
-Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
+Code released under [the MIT license](https://github.com/LitecoinZ-Community/ltzcore/blob/master/LICENSE).
 
 Copyright 2015-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.

@@ -24,13 +24,9 @@ Edit the .profile file to insert:
 > *Make sure to replace username*
 
 ```
-alias bitcoinmainnet='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/'
+alias mainnet='/Applications/LitecoinZ-Qt.app/Contents/MacOS/LitecoinZ-Qt -datadir=/Users/username/blockchains/litecoinz-core/networks/mainnet/'
 
-alias bitcoinregtest='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/regtest/'
-
-alias bitcoincashmainnet='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/mainnet/ -flexiblehandshake -initiatecashconnections'
-
-alias bitcoincashregtest='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/regtest/ -flexiblehandshake -initiatecashconnections'
+alias regtest='/Applications/LitecoinZ-Qt.app/Contents/MacOS/LitecoinZ-Qt -datadir=/Users/username/blockchains/litecoinz-core/networks/regtest/'
 ```
 
 Ensure Mongod is running
@@ -39,26 +35,26 @@ Ensure Mongod is running
 mongod
 ```
 
-Start the Bitcore node in the /bitcore/ project root directory
+Start the Ltzcore node in the /ltzcore/ project root directory
 
 ```
 npm run node
 ```
 
-To run RegTest Bitcoin Core RegTest Client
+To run RegTest LitecoinZ Core RegTest Client
 
 ```
 . ~/.profile
-bitcoinregtest
+regtest
 ```
 
-> If successful Bitcore logo should be blue and syncing blocks on mongod in the background
+> If successful Ltzcore logo should be blue and syncing blocks on mongod in the background
 
 ## How to Generate Blocks
 
 Go to Help -> Debug Window -> console tab
 
-Input generate command in the line to create 5000 BTC
+Input generate command in the line to create 5000 LTZ
 
 ```
 generate 5000

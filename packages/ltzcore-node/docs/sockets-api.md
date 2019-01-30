@@ -2,7 +2,7 @@
 ```
 socket.on('connect', () => {
   console.log('Connected to socket');
-  socket.emit('room', '/BTC/regtest/inv');
+  socket.emit('room', '/LTZ/regtest/inv');
 });
 ```
 
@@ -14,9 +14,9 @@ socket.on('connect', () => {
 
 # Examples
 
-/BTC/regtest/inv
+/LTZ/regtest/inv
 
-/BTC/mainnet/address
+/LTZ/mainnet/address
 ```
 
 ## Tx Event Listener
@@ -56,7 +56,7 @@ socket.on('block', block => {
 @returns - **block** - A specified block on a blockchain
 ```
 block = {
-  chain: 'BTC',
+  chain: 'LTZ',
   network: 'regtest',
   hash: '529e8ecb8db4e40f604b180e835cf53cf0eafbd43fbea13ced38ac9faf819560',
   height: 611,

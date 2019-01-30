@@ -1,0 +1,11 @@
+[Unit]
+Description=Ltzcore Node
+After=network.target
+
+[Service]
+User=ltzcore
+Group=ltzcore
+ExecStart=/usr/bin/node /home/ltzcore/ltzcore/packages/ltzcore-node/server.js
+
+[Install]
+WantedBy=multi-user.target

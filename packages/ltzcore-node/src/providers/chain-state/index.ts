@@ -1,15 +1,9 @@
-import { BTCStateProvider } from './btc/btc';
-import { BCHStateProvider } from './bch/bch';
-import { ETHStateProvider } from './eth/eth';
-import { BATStateProvider } from './erc20/tokens/bat';
+import { LTZStateProvider } from './ltz/ltz';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { Chain } from '../../types/ChainNetwork';
 
 const services: CSP.ChainStateServices = {
-  BTC: new BTCStateProvider(),
-  BCH: new BCHStateProvider(),
-  ETH: new ETHStateProvider(),
-  BAT: new BATStateProvider()
+  LTZ: new LTZStateProvider(),
 };
 
 class ChainStateProxy implements CSP.ChainStateProvider {

@@ -232,7 +232,7 @@ export async function transactions(
 if (require.main === module)
   (async () => {
     const info = {
-      chain: process.env.CHAIN || 'BTC',
+      chain: process.env.CHAIN || 'LTZ',
       network: process.env.NETWORK || 'testnet'
     };
     const creds = config.chains[info.chain][info.network].rpc;

@@ -1,6 +1,6 @@
 {
   "name": "ltzcore-node",
-  "description": "A blockchain indexing node with extended capabilities using bitcore",
+  "description": "A blockchain indexing node with extended capabilities using ltzcore",
   "engines": {
     "node": ">=8.0.0"
   },
@@ -38,9 +38,7 @@
   "keywords": [
     "ltzcore-node",
     "typescript",
-    "bitcoin",
-    "bitcoin-cash",
-    "ethereum",
+    "litecoinz",
     "node"
   ],
   "license": "MIT",
@@ -74,9 +72,7 @@
     "async": "^2.5.0",
     "ltzcore-client": "^8.0.0",
     "ltzcore-lib": "^8.0.0",
-    "bitcore-lib-cash": "^8.0.0",
     "ltzcore-p2p": "^8.0.0",
-    "bitcore-p2p-cash": "^8.0.0",
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "express": "^4.16.3",

@@ -12,7 +12,7 @@ describe('Wallet Model', () => {
     it('should return a locked wallet on create', async () => {
       const walletName = 'Test Wallet';
       const password = 'iamsatoshi';
-      const chain = 'BTC';
+      const chain = 'LTZ';
       const network = 'regtest';
       const baseUrl = 'http://localhost:3000/api';
       let lockedWallet: Wallet;
@@ -29,9 +29,9 @@ describe('Wallet Model', () => {
 
       expect(lockedWallet).to.have.includes({
         name: 'Test Wallet',
-        chain: 'BTC',
+        chain: 'LTZ',
         network: 'regtest',
-        baseUrl: 'http://localhost:3000/api/BTC/regtest'
+        baseUrl: 'http://localhost:3000/api/LTZ/regtest'
       });
       expect(lockedWallet).to.have.property('pubKey');
       expect(lockedWallet).to.have.property('password');
@@ -40,13 +40,13 @@ describe('Wallet Model', () => {
 
       let result = await WalletStorage.collection.findOne({
         name: 'Test Wallet',
-        chain: 'BTC',
+        chain: 'LTZ',
         network: 'regtest'
       });
 
       expect(result).to.includes({
         name: 'Test Wallet',
-        chain: 'BTC',
+        chain: 'LTZ',
         network: 'regtest',
         path: null,
         singleAddress: null
@@ -59,7 +59,7 @@ describe('Wallet Model', () => {
     it('should generate addresses using rpc then import to new wallet', async () => {
       const walletName = 'Test Wallet 2';
       const password = 'iamsatoshi2';
-      const chain = 'BTC';
+      const chain = 'LTZ';
       const network = 'regtest';
       const baseUrl = 'http://localhost:3000/api';
       let lockedWallet: Wallet;
