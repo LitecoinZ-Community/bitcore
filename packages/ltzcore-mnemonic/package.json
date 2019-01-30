@@ -1,7 +1,7 @@
 {
   "name": "ltzcore-mnemonic",
   "version": "8.0.0",
-  "description": "BIP39 Mnemonics implemented for Bitcore.",
+  "description": "BIP39 Mnemonics implemented for ltzcore.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -19,15 +19,19 @@
     {
       "name": "Matias Alejo Garcia",
       "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "The LitecoinZ Community",
+      "email": "community@litecoinz.org"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/ltzcore-mnemonic.git"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-mnemonic.git"
   },
   "keywords": [
-    "bitcoin",
-    "bitcore",
+    "LitecoinZ",
+    "ltzcore",
     "mnemonic",
     "crypto",
     "cryptography",

@@ -197,7 +197,7 @@ Mnemonic.fromSeed = function(seed, wordlist) {
 /**
  *
  * Generates a HD Private Key from a Mnemonic.
- * Optionally receive a passphrase and bitcoin network.
+ * Optionally receive a passphrase and LitecoinZ network.
  *
  * @param {String=} [passphrase]
  * @param {Network|String|number=} [network] - The network: 'livenet' or 'testnet'
