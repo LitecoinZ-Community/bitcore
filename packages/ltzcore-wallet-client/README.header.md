@@ -1,16 +1,12 @@
 # ltzcore-wallet-client
 
-[![NPM Package](https://img.shields.io/npm/v/ltzcore-wallet-client.svg?style=flat-square)](https://www.npmjs.org/package/ltzcore-wallet-client)
-[![Build Status](https://img.shields.io/travis/bitpay/ltzcore-wallet-client.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/ltzcore-wallet-client) 
-[![Coverage Status](https://coveralls.io/repos/bitpay/ltzcore-wallet-client/badge.svg)](https://coveralls.io/r/bitpay/ltzcore-wallet-client)
-
-The *official* client library for [ltzcore-wallet-service] (https://github.com/bitpay/ltzcore-wallet-service). 
+The *official* client library for [ltzcore-wallet-service] (https://github.com/LitecoinZ-Community/ltzcore-wallet-service). 
 
 ## Description
 
-This package communicates with BWS [Bitcore wallet service](https://github.com/bitpay/ltzcore-wallet-service) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
+This package communicates with BWS [ltzcore wallet service](https://github.com/LitecoinZ-Community/ltzcore-wallet-service) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
 
-See [ltzcore-wallet] (https://github.com/bitpay/ltzcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses ltzcore-wallet-client.
+See [ltzcore-wallet] (https://github.com/LitecoinZ-Community/ltzcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses ltzcore-wallet-client.
 
 ## Get Started
 
@@ -21,7 +17,7 @@ You can start using ltzcore-wallet-client in any of these two ways:
 
 ## Example
 
-Start your own local [Bitcore wallet service](https://github.com/bitpay/ltzcore-wallet-service) instance. In this example we assume you have `ltzcore-wallet-service` running on your `localhost:3232`.
+Start your own local [ltzcore wallet service](https://github.com/LitecoinZ-Community/ltzcore-wallet-service) instance. In this example we assume you have `ltzcore-wallet-service` running on your `localhost:3232`.
 
 Then create two files `irene.js` and `tomas.js` with the content below:
 
@@ -32,7 +28,7 @@ var Client = require('ltzcore-wallet-client');
 
 
 var fs = require('fs');
-var BWS_INSTANCE_URL = 'https://bws.bitpay.com/bws/api'
+var BWS_INSTANCE_URL = 'https://bws.litecoinz.org/bws/api'
 
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
@@ -58,7 +54,7 @@ var Client = require('ltzcore-wallet-client');
 
 
 var fs = require('fs');
-var BWS_INSTANCE_URL = 'https://bws.bitpay.com/bws/api'
+var BWS_INSTANCE_URL = 'https://bws.litecoinz.org/bws/api'
 
 var secret = process.argv[2];
 if (!secret) {

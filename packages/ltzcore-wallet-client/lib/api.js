@@ -7,8 +7,7 @@ var async = require('async');
 var events = require('events');
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  ltz: Bitcore
 };
 var Mnemonic = require('ltzcore-mnemonic');
 var sjcl = require('sjcl');
@@ -270,7 +269,7 @@ API._signRequest = function(method, url, args, privKey) {
  * Seed from random
  *
  * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
+ * @param {String} opts.coin - default 'ltz'
  * @param {String} opts.network - default 'livenet'
  */
 API.prototype.seedFromRandom = function(opts) {
@@ -278,7 +277,7 @@ API.prototype.seedFromRandom = function(opts) {
   $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: argument should be an options object.');
 
   opts = opts || {};
-  this.credentials = Credentials.create(opts.coin || 'btc', opts.network || 'livenet');
+  this.credentials = Credentials.create(opts.coin || 'ltz', opts.network || 'livenet');
 };
 
 
@@ -357,7 +356,7 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
  * Seed from random with mnemonic
  *
  * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
+ * @param {String} opts.coin - default 'ltz'
  * @param {String} opts.network - default 'livenet'
  * @param {String} opts.passphrase
  * @param {Number} opts.language - default 'en'
@@ -368,7 +367,7 @@ API.prototype.seedFromRandomWithMnemonic = function(opts) {
   $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: argument should be an options object.');
 
   opts = opts || {};
-  this.credentials = Credentials.createWithMnemonic(opts.coin || 'btc', opts.network || 'livenet', opts.passphrase, opts.language || 'en', opts.account || 0);
+  this.credentials = Credentials.createWithMnemonic(opts.coin || 'ltz', opts.network || 'livenet', opts.passphrase, opts.language || 'en', opts.account || 0);
 };
 
 API.prototype.getMnemonic = function() {
@@ -390,13 +389,13 @@ API.prototype.clearMnemonic = function() {
  * Seed from extended private key
  *
  * @param {String} xPrivKey
- * @param {String} opts.coin - default 'btc'
+ * @param {String} opts.coin - default 'ltz'
  * @param {Number} opts.account - default 0
  * @param {String} opts.derivationStrategy - default 'BIP44'
  */
 API.prototype.seedFromExtendedPrivateKey = function(xPrivKey, opts) {
   opts = opts || {};
-  this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'btc', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+  this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'ltz', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
 };
 
 
@@ -406,7 +405,7 @@ API.prototype.seedFromExtendedPrivateKey = function(xPrivKey, opts) {
  *
  * @param {String} BIP39 words
  * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
+ * @param {String} opts.coin - default 'ltz'
  * @param {String} opts.network - default 'livenet'
  * @param {String} opts.passphrase
  * @param {Number} opts.account - default 0
@@ -416,7 +415,7 @@ API.prototype.seedFromMnemonic = function(words, opts) {
   $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: second argument should be an options object.');
 
   opts = opts || {};
-  this.credentials = Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+  this.credentials = Credentials.fromMnemonic(opts.coin || 'ltz', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
 };
 
 /**
@@ -426,7 +425,7 @@ API.prototype.seedFromMnemonic = function(words, opts) {
  * @param {String} source - A name identifying the source of the xPrivKey (e.g. ledger, TREZOR, ...)
  * @param {String} entropySourceHex - A HEX string containing pseudo-random data, that can be deterministically derived from the xPrivKey, and should not be derived from xPubKey.
  * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
+ * @param {String} opts.coin - default 'ltz'
  * @param {Number} opts.account - default 0
  * @param {String} opts.derivationStrategy - default 'BIP44'
  */
@@ -434,7 +433,7 @@ API.prototype.seedFromExtendedPublicKey = function(xPubKey, source, entropySourc
   $.checkArgument(_.isUndefined(opts) || _.isObject(opts));
 
   opts = opts || {};
-  this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'btc', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44);
+  this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'ltz', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44);
 };
 
 
@@ -513,7 +512,7 @@ API.prototype._import = function(cb) {
  *
  * @param {String} BIP39 words
  * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
+ * @param {String} opts.coin - default 'ltz'
  * @param {String} opts.network - default 'livenet'
  * @param {String} opts.passphrase
  * @param {Number} opts.account - default 0
@@ -529,7 +528,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
   opts = opts || {};
 
   function derive(nonCompliantDerivation) {
-    return Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
+    return Credentials.fromMnemonic(opts.coin || 'ltz', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
       nonCompliantDerivation: nonCompliantDerivation,
       entropySourcePath: opts.entropySourcePath,
       walletPrivKey: opts.walletPrivKey,
@@ -560,7 +559,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
  * Import from extended private key
  *
  * @param {String} xPrivKey
- * @param {String} opts.coin - default 'btc'
+ * @param {String} opts.coin - default 'ltz'
  * @param {Number} opts.account - default 0
  * @param {String} opts.derivationStrategy - default 'BIP44'
  * @param {String} opts.compliantDerivation - default 'true'
@@ -577,7 +576,7 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
   }
 
   try {
-    this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'btc', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+    this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'ltz', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
   } catch (e) {
     log.info('xPriv error:', e);
     return cb(new Errors.INVALID_BACKUP);
@@ -593,7 +592,7 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
  * @param {String} source - A name identifying the source of the xPrivKey
  * @param {String} entropySourceHex - A HEX string containing pseudo-random data, that can be deterministically derived from the xPrivKey, and should not be derived from xPubKey.
  * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
+ * @param {String} opts.coin - default 'ltz'
  * @param {Number} opts.account - default 0
  * @param {String} opts.derivationStrategy - default 'BIP44'
  * @param {String} opts.compliantDerivation - default 'true'
@@ -606,7 +605,7 @@ API.prototype.importFromExtendedPublicKey = function(xPubKey, source, entropySou
   opts = opts || {};
   log.debug('Importing from Extended Private Key');
   try {
-    this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'btc', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+    this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'ltz', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
   } catch (e) {
     log.info('xPriv error:', e);
     return cb(new Errors.INVALID_BACKUP);
@@ -643,14 +642,14 @@ API.prototype.getBalanceFromPrivateKey = function(privateKey, coin, cb) {
 
   if (_.isFunction(coin)) {
     cb = coin;
-    coin = 'btc';
+    coin = 'ltz';
   }
   var B = Bitcore_[coin];
  
   var privateKey = new B.PrivateKey(privateKey);
   var address = privateKey.publicKey.toAddress();
   self.getUtxos({
-    addresses: coin == 'bch' ? address.toLegacyAddress() : address.toString(),
+    addresses: address.toString(),
   }, function(err, utxos) {
     if (err) return cb(err);
     return cb(null, _.sumBy(utxos, 'satoshis'));
@@ -662,7 +661,7 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
 
   opts = opts || {};
 
-  var coin = opts.coin || 'btc';
+  var coin = opts.coin || 'ltz';
   var B = Bitcore_[coin];
   var privateKey = B.PrivateKey(privateKey);
   var address = privateKey.publicKey.toAddress();
@@ -671,7 +670,7 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
 
     function(next) {
       self.getUtxos({
-        addresses: coin == 'bch' ?  address.toLegacyAddress() : address.toString(),
+        addresses: address.toString(),
       }, function(err, utxos) {
         return next(err, utxos);
       });
@@ -970,7 +969,7 @@ API.parseSecret = function(secret) {
 
     var walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
     var networkChar = secretSplit[2];
-    var coin = secretSplit[3] || 'btc';
+    var coin = secretSplit[3] || 'ltz';
 
     return {
       walletId: walletId,
@@ -1233,7 +1232,7 @@ API.prototype.decryptPrivateKey = function(password) {
 /**
  * Get current fee levels for the specified network
  *
- * @param {string} coin - 'btc' (default) or 'bch'
+ * @param {string} coin - 'ltz' (default)
  * @param {string} network - 'livenet' (default) or 'testnet'
  * @param {Callback} cb
  * @returns {Callback} cb - Returns error or an object with status information
@@ -1241,10 +1240,10 @@ API.prototype.decryptPrivateKey = function(password) {
 API.prototype.getFeeLevels = function(coin, network, cb) {
   var self = this;
 
-  $.checkArgument(coin || _.includes(['btc', 'bch'], coin));
+  $.checkArgument(coin || _.includes(['ltz'], coin));
   $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
 
-  self._doGetRequest('/v2/feelevels/?coin=' + (coin || 'btc') + '&network=' + (network || 'livenet'), function(err, result) {
+  self._doGetRequest('/v2/feelevels/?coin=' + (coin || 'ltz') + '&network=' + (network || 'livenet'), function(err, result) {
     if (err) return cb(err);
     return cb(err, result);
   });
@@ -1275,7 +1274,7 @@ API.prototype._checkKeyDerivation = function() {
  * @param {Number} m
  * @param {Number} n
  * @param {object} opts (optional: advanced options)
- * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch).
+ * @param {string} opts.coin[='ltz'] - The coin for this wallet.
  * @param {string} opts.network[='livenet']
  * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
  * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
@@ -1291,8 +1290,8 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   if (opts) $.shouldBeObject(opts);
   opts = opts || {};
 
-  var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
+  var coin = opts.coin || 'ltz';
+  if (!_.includes(['ltz'], coin)) return cb(new Error('Invalid coin'));
 
   var network = opts.network || 'livenet';
   if (!_.includes(['testnet', 'livenet'], network)) return cb(new Error('Invalid network'));
@@ -1354,7 +1353,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
  * @param {String} secret
  * @param {String} copayerName
  * @param {Object} opts
- * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch).
+ * @param {string} opts.coin[='ltz'] - The expected coin for this wallet.
  * @param {Boolean} opts.dryRun[=false] - Simulate wallet join
  * @param {Callback} cb
  * @returns {Callback} cb - Returns the wallet
@@ -1372,8 +1371,8 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
 
   opts = opts || {};
 
-  var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
+  var coin = opts.coin || 'ltz';
+  if (!_.includes(['ltz'], coin)) return cb(new Error('Invalid coin'));
 
   try {
     var secretData = API.parseSecret(secret);
@@ -1655,7 +1654,7 @@ API.prototype.fetchPayPro = function(opts, cb) {
   PayPro.get({
     url: opts.payProUrl,
     http: this.payProHttp,
-    coin: this.credentials.coin || 'btc',
+    coin: this.credentials.coin || 'ltz',
   }, function(err, paypro) { 
     if (err)
       return cb(err);
@@ -1867,7 +1866,7 @@ API.prototype.getBalance = function(opts, cb) {
   var args = [];
   if (opts.twoStep) args.push('?twoStep=1');
   if (opts.coin) {
-    if (!_.includes(['btc', 'bch'], opts.coin)) return cb(new Error('Invalid coin'));
+    if (!_.includes(['ltz'], opts.coin)) return cb(new Error('Invalid coin'));
     args.push('coin=' + opts.coin);
   }
   var qs = '';
@@ -1940,7 +1939,7 @@ API.prototype.getPayPro = function(txp, cb) {
   PayPro.get({
     url: txp.payProUrl,
     http: self.payProHttp,
-    coin: txp.coin || 'btc',
+    coin: txp.coin || 'ltz',
   }, function(err, paypro) {
     if (err) return cb(new Error('Cannot check transaction now:' + err));
     return cb(null, paypro);
@@ -2062,7 +2061,7 @@ API.prototype.signTxProposalFromAirGapped = function(txp, encryptedPkr, m, n, pa
  * @param {Number} m
  * @param {Number} n
  * @param {Object} opts
- * @param {String} opts.coin (default 'btc')
+ * @param {String} opts.coin (default 'ltz')
  * @param {String} opts.passphrase
  * @param {Number} opts.account - default 0
  * @param {String} opts.derivationStrategy - default 'BIP44'
@@ -2072,8 +2071,8 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
   var self = this;
   opts = opts || {}
 
-  var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
+  var coin = opts.coin || 'ltz';
+  if (!_.includes(['ltz'], coin)) return cb(new Error('Invalid coin'));
 
   var publicKeyRing = JSON.parse(unencryptedPkr);
 
@@ -2204,7 +2203,7 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
           disableLargeFees: true,
           disableDustOutputs: true
         }),
-        coin: txp.coin || 'btc',
+        coin: txp.coin || 'ltz',
       }, function(err, ack, memo) {
         log.warn('Merchant rejected the payment. Broadcasting it any ways.', err);
         if (memo) {
@@ -2425,7 +2424,7 @@ API.prototype.getTxNotes = function(opts, cb) {
  * @param {Object} opts
  * @param {string} opts.code - Currency ISO code.
  * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
- * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+ * @param {String} [opts.provider] - A provider of exchange rates (default 'LitecoinZ').
  * @returns {Object} rates - The exchange rate.
  */
 API.prototype.getFiatRate = function(opts, cb) {

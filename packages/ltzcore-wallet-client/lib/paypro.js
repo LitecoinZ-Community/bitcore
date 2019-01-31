@@ -1,8 +1,7 @@
 var $ = require('preconditions').singleton();
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  ltz: Bitcore
 };
 
 var BitcorePayPro = require('ltzcore-payment-protocol');
@@ -95,7 +94,7 @@ PayPro.get = function(opts, cb) {
   $.checkArgument(opts && opts.url);
 
   var http = getHttp(opts);
-  var coin = opts.coin || 'btc';
+  var coin = opts.coin || 'ltz';
   var bitcore = Bitcore_[coin];
 
   var COIN = coin.toUpperCase();
@@ -166,7 +165,7 @@ PayPro.get = function(opts, cb) {
       memo: pd.get('memo'),
       time: pd.get('time'),
       merchant_data: md,
-      toAddress: coin == 'bch' ? addr.toLegacyAddress() : addr.toString(),
+      toAddress: addr.toString(),
       amount: amount,
       network: network,
       domain: opts.host,
@@ -243,7 +242,7 @@ PayPro.send = function(opts, cb) {
     .checkArgument(opts.amountSat);
 
 
-  var coin = opts.coin || 'btc';
+  var coin = opts.coin || 'ltz';
   var COIN = coin.toUpperCase();
 
   var payment = PayPro._createPayment(opts.merchant_data, opts.rawTx, opts.refundAddr, opts.amountSat, coin);

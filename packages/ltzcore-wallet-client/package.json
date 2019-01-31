@@ -5,29 +5,28 @@
   "version": "8.0.0",
   "license": "MIT",
   "keywords": [
-    "bitcoin",
+    "litecoinz",
     "copay",
     "multisig",
     "wallet",
     "client",
-    "bitcore",
+    "ltzcore",
     "BWS",
     "BWC"
   ],
   "engine": "node >= 8.0.0",
   "main": "index.js",
   "repository": {
-    "url": "git@github.com:bitpay/ltzcore-wallet-client.git",
+    "url": "git@github.com:LitecoinZ-Community/ltzcore-wallet-client.git",
     "type": "git"
   },
   "bugs": {
-    "url": "https://github.com/bitpay/ltzcore-wallet-client/issues"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-wallet-client/issues"
   },
   "dependencies": {
     "async": "^0.9.0",
     "bip38": "^1.3.0",
     "ltzcore-lib": "^8.0.0",
-    "bitcore-lib-cash": "^8.0.0",
     "ltzcore-mnemonic": "^8.0.0",
     "ltzcore-payment-protocol": "^8.0.0",
     "json-stable-stringify": "^1.0.0",

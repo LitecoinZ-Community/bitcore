@@ -7,8 +7,7 @@ var Stringify = require('json-stable-stringify');
 
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  ltz: Bitcore
 };
 var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;
@@ -73,7 +72,7 @@ Utils.decryptMessageNoThrow = function(cyphertextJson, encryptingKey) {
 };
 
 
-/* TODO: It would be nice to be compatible with bitcoind signmessage. How
+/* TODO: It would be nice to be compatible with litecoinzd signmessage. How
  * the hash is calculated there? */
 Utils.hashMessage = function(text) {
   $.checkArgument(text);
@@ -137,7 +136,7 @@ Utils.getProposalHash = function(proposalHeader) {
 Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin) {
   $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
-  coin = coin || 'btc';
+  coin = coin || 'ltz';
   var bitcore = Bitcore_[coin];
   var publicKeys = _.map(publicKeyRing, function(item) {
     var xpub = new bitcore.HDPublicKey(item.xPubKey);
@@ -156,14 +155,14 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
   }
 
   return {
-    address: coin == 'bch' ?  bitcoreAddress.toLegacyAddress() : bitcoreAddress.toString(),
+    address: bitcoreAddress.toString(),
     path: path,
     publicKeys: _.invokeMap(publicKeys, 'toString'),
   };
 };
 
 Utils.xPubToCopayerId = function(coin, xpub) {
-  var str = coin == 'btc' ? xpub : coin + xpub;
+  var str = coin == 'ltz' ? xpub : coin + xpub;
   var hash = sjcl.hash.sha256.hash(str);
   return sjcl.codec.hex.fromBits(hash);
 };
@@ -212,7 +211,7 @@ Utils.formatAmount = function(satoshis, unit, opts) {
 };
 
 Utils.buildTx = function(txp) {
-  var coin = txp.coin || 'btc';
+  var coin = txp.coin || 'ltz';
 
   var bitcore = Bitcore_[coin];
 
@@ -263,7 +262,7 @@ Utils.buildTx = function(txp) {
     });
   }
 
-  // Validate inputs vs outputs independently of Bitcore
+  // Validate inputs vs outputs independently of ltzcore
   var totalInputs = _.reduce(txp.inputs, function(memo, i) {
     return +i.satoshis + memo;
   }, 0);

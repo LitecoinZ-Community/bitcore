@@ -49,7 +49,7 @@ function Credentials() {
 };
 
 function _checkCoin(coin) {
-  if (!_.includes(['btc', 'bch'], coin)) throw new Error('Invalid coin');
+  if (!_.includes(['ltz'], coin)) throw new Error('Invalid coin');
 };
 
 function _checkNetwork(network) {
@@ -302,7 +302,7 @@ Credentials.fromObj = function(obj) {
     x[k] = obj[k];
   });
 
-  x.coin = x.coin || 'btc';
+  x.coin = x.coin || 'ltz';
   x.derivationStrategy = x.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
   x.addressType = x.addressType || Constants.SCRIPT_TYPES.P2SH;
   x.account = x.account || 0;
@@ -496,7 +496,7 @@ Credentials.fromOldCopayWallet = function(w) {
   };
 
   var credentials = new Credentials();
-  credentials.coin = 'btc';
+  credentials.coin = 'ltz';
   credentials.derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP45;
   credentials.xPrivKey = w.privateKey.extendedPrivateKeyString;
   credentials._expand();

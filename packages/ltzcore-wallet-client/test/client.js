@@ -16,8 +16,7 @@ var config = require('./test-config');
 
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  ltz: Bitcore,
 };
 
 
@@ -37,11 +36,11 @@ var Errors = require('../lib/errors');
 
 var helpers = {};
 
-helpers.toSatoshi = function(btc) {
-  if (_.isArray(btc)) {
-    return _.map(btc, helpers.toSatoshi);
+helpers.toSatoshi = function(ltz) {
+  if (_.isArray(ltz)) {
+    return _.map(ltz, helpers.toSatoshi);
   } else {
-    return parseFloat((btc * 1e8).toPrecision(12));
+    return parseFloat((ltz * 1e8).toPrecision(12));
   }
 };
 
@@ -113,7 +112,7 @@ helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
 
   opts = opts || {};
 
-  var coin = opts.coin || 'btc';
+  var coin = opts.coin || 'ltz';
   var network = opts.network || 'testnet';
 
   clients[0].seedFromRandomWithMnemonic({
@@ -408,7 +407,7 @@ describe('client API', function() {
   });
 
   describe('Client Internals', function() {
-    it('should expose bitcore', function() {
+    it('should expose ltzcore', function() {
       should.exist(Client.Bitcore);
       should.exist(Client.Bitcore.HDPublicKey);
     });
@@ -990,7 +989,7 @@ describe('client API', function() {
         var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign btc proposal correctly', function() {
+      it('should sign ltz proposal correctly', function() {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1025,42 +1024,6 @@ describe('client API', function() {
         signatures[0].should.equal('3045022100cfacaf8e4c9782f33f717eba3162d44cf9f34d9768a3bcd66b7052eb0868a0880220015e930e1f7d9a8b6b9e54d1450556bf4ba95c2cf8ef5c55d97de7df270cc6fd');
         signatures[1].should.equal('3044022069cf6e5d8700ff117f754e4183e81690d99d6a6443e86c9589efa072ecb7d82c02204c254506ac38774a2176f9ef56cc239ef7867fbd24da2bef795128c75a063301');
       });
-      it('should sign BCH proposal correctly', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-
-        var publicKeyRing = [{
-          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
-        }];
-
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
-          version: 3,
-          coin: 'bch',
-          inputs: utxos,
-          outputs: [{
-            toAddress: toAddress,
-            amount: 800,
-            message: 'first output'
-          }, {
-            toAddress: toAddress,
-            amount: 900,
-            message: 'second output'
-          }],
-          changeAddress: {
-            address: changeAddress
-          },
-          requiredSignatures: 1,
-          outputOrder: [0, 1, 2],
-          fee: 10000,
-          derivationStrategy: 'BIP44',
-          addressType: 'P2PKH',
-        };
-        var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
-        signatures.length.should.be.equal(utxos.length);
-        signatures[0].should.equal('304402200aa70dfe99e25792c4a7edf773477100b6659f1ba906e551e6e5218ec32d273402202e31c575edb55b2da824e8cafd02b4769017ef63d3c888718cf6f0243c570d41');
-        signatures[1].should.equal('3045022100afde45e125f654453493b40d288cd66e8a011c66484509ae730a2686c9dff30502201bf34a6672c5848dd010b89ea1a5f040731acf78fec062f61b305e9ce32798a5');
-      });
     });
   });
 
@@ -1071,7 +1034,7 @@ describe('client API', function() {
         var walletId = Uuid.v4();
         var walletPrivKey = new Bitcore.PrivateKey();
         var network = i % 2 == 0 ? 'testnet' : 'livenet';
-        var coin = i % 3 == 0 ? 'bch' : 'btc';
+        var coin = 'ltz'
         var secret = Client._buildSecret(walletId, walletPrivKey, coin, network);
         var result = Client.parseSecret(secret);
         result.walletId.should.equal(walletId);
@@ -1089,7 +1052,7 @@ describe('client API', function() {
     it('should create secret and parse secret from string', function() {
       var walletId = Uuid.v4();
       var walletPrivKey = new Bitcore.PrivateKey();
-      var coin = 'btc';
+      var coin = 'ltz';
       var network = 'testnet';
       var secret = Client._buildSecret(walletId, walletPrivKey.toString(), coin, network);
       var result = Client.parseSecret(secret);
@@ -1098,9 +1061,9 @@ describe('client API', function() {
       result.coin.should.equal(coin);
       result.network.should.equal(network);
     });
-    it('should default to btc for secrets not specifying coin', function() {
+    it('should default to ltz for secrets not specifying coin', function() {
       var result = Client.parseSecret('5ZN64RxKWCJXcy1pZwgrAzL1NnN5FQic5M2tLJVG5bEHaGXNRQs2uzJjMa9pMAbP5rz9Vu2xSaT');
-      result.coin.should.equal('btc');
+      result.coin.should.equal('ltz');
     });
   });
 
@@ -1243,45 +1206,6 @@ describe('client API', function() {
         });
       });
     });
-
-    it('should create Bitcoin Cash wallet', function(done) {
-      clients[0].seedFromRandomWithMnemonic({
-        coin: 'bch'
-      });
-      clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
-        coin: 'bch'
-      }, function(err, secret) {
-        should.not.exist(err);
-        clients[0].getStatus({}, function(err, status) {
-          should.not.exist(err);
-          status.wallet.coin.should.equal('bch');
-          done();
-        })
-      });
-    });
-
-    it('should create a BCH  address correctly', function(done) {
-      var xPriv = 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
-      clients[0].seedFromExtendedPrivateKey(xPriv, {
-        'coin': 'bch',
-      });
-      clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
-        coin: 'bch'
-      }, function(err, secret) {
-        should.not.exist(err);
-
-        clients[0].createAddress(function(err, x) {
-          should.not.exist(err);
-          should.not.exist(err);
-          x.coin.should.equal('bch');
-          x.network.should.equal('livenet');
-          x.address.should.equal('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
-          done();
-        })
-      });
-    });
-
- 
 
     it('should check balance in a 1-1 ', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
@@ -1724,28 +1648,17 @@ describe('client API', function() {
   });
 
   describe('Network fees', function() {
-    it('should get current fee levels for BTC', function(done) {
+    it('should get current fee levels for LTZ', function(done) {
       blockchainExplorerMock.setFeeLevels({
         1: 40000,
         3: 20000,
         10: 18000,
       });
       clients[0].credentials = {};
-      clients[0].getFeeLevels('btc', 'livenet', function(err, levels) {
+      clients[0].getFeeLevels('ltz', 'livenet', function(err, levels) {
         should.not.exist(err);
         should.exist(levels);
         _.difference(['priority', 'normal', 'economy'], _.map(levels, 'level')).should.be.empty;
-        done();
-      });
-    });
-    it('should get default fee levels for BCH', function(done) {
-      blockchainExplorerMock.setFeeLevels({});
-      clients[0].credentials = {};
-      clients[0].getFeeLevels('bch', 'livenet', function(err, levels) {
-        should.not.exist(err);
-        should.exist(levels);
-        levels[0].level.should.equal('normal');
-        levels[0].feePerKb.should.equal(2000);
         done();
       });
     });
@@ -2651,13 +2564,6 @@ describe('client API', function() {
       }, function(w) {
         clients[0].createAddress(function(err, address) {
           should.not.exist(err);
-
-          // TODO change createAddress to /v4/, and remove this.
-          if (coin == 'bch') {
-            address.address = Bitcore_['bch'].Address(address.address).toString(true);
-          }
-          // ==
-          
           blockchainExplorerMock.setUtxo(address, 2, 2);
           blockchainExplorerMock.setUtxo(address, 2, 2);
           blockchainExplorerMock.setUtxo(address, 1, 2, 0);
@@ -2666,9 +2572,9 @@ describe('client API', function() {
       });
     };
 
-    describe('BTC', function(done) {
+    describe('LTZ', function(done) {
       beforeEach(function(done) {
-        setup(2, 3, 'btc', 'testnet', done);
+        setup(2, 3, 'ltz', 'testnet', done);
       });
 
       it('Should sign proposal', function(done) {
@@ -2780,44 +2686,6 @@ describe('client API', function() {
       });
 
     });
-
-    describe('BCH', function(done) {
-      beforeEach(function(done) {
-        setup(1, 1, 'bch', 'livenet', done);
-      });
-
-      it('Should sign proposal', function(done) {
-        var toAddress = 'CfNCvxmKYzZsS78pDKKfrDd2doZt3w4jUs';
-        var opts = {
-          outputs: [{
-            amount: 1e8,
-            toAddress: toAddress,
-          }, {
-            amount: 2e8,
-            toAddress: toAddress,
-          }],
-          feePerKb: 100e2,
-          message: 'just some message',
-          coin: 'bch',
-        };
-        clients[0].createTxProposal(opts, function(err, txp) {
-          should.not.exist(err);
-          should.exist(txp);
-          clients[0].publishTxProposal({
-            txp: txp,
-          }, function(err, publishedTxp) {
-            should.not.exist(err);
-            should.exist(publishedTxp);
-            publishedTxp.status.should.equal('pending');
-            clients[0].signTxProposal(publishedTxp, function(err, txp) {
-              should.not.exist(err);
-              txp.status.should.equal('accepted');
-              done();
-            });
-          });
-        });
-      });
-    });
   });
 
 
@@ -2845,7 +2713,7 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              http.getCall(0).args[0].coin.should.equal('btc');
+              http.getCall(0).args[0].coin.should.equal('ltz');
 
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
@@ -3022,7 +2890,7 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              http.getCall(0).args[0].coin.should.equal('btc');
+              http.getCall(0).args[0].coin.should.equal('ltz');
               paypro.requiredFeeRate.should.equal(1);
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
@@ -3113,7 +2981,7 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              http.getCall(0).args[0].coin.should.equal('btc');
+              http.getCall(0).args[0].coin.should.equal('ltz');
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
@@ -3178,106 +3046,6 @@ describe('client API', function() {
               var p = pay.makePayment(data);
               var rawTx = p.get('transactions')[0].toBuffer();
               var tx = new Bitcore.Transaction(rawTx);
-              var script = tx.inputs[0].script;
-              script.isPublicKeyHashIn().should.equal(true);
-              done();
-            });
-          });
-        });
-      });
-    });
-
-
-    describe('1-of-1 BCH wallet', function() {
-      
-      // note this is using BCH with BTC format testnet address
-      beforeEach(function(done) {
-        http = sinon.stub();
-        http.yields(null, TestData.payProDataBchBuf);
-        helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch', network:'livenet'}, function(w) {
-          clients[0].createAddress(function(err, x0) {
-            should.not.exist(err);
-            should.exist(x0.address);
-
-            // TODO change createAddress to /v4/, and remove this.
-            x0.address = Bitcore_['bch'].Address(x0.address).toString(true);
-            // ======
-            blockchainExplorerMock.setUtxo(x0, 1, 2);
-            blockchainExplorerMock.setUtxo(x0, 1, 2);
-            var opts = {
-              payProUrl: 'dummy',
-            };
-            clients[0].payProHttp = clients[1].payProHttp = http;
-
-            clients[0].fetchPayPro(opts, function(err, paypro) {
-              paypro.toAddress.should.equal('CN4yN5kfov99EjS1amKYQnSfaehpyRGzv2');
-              http.getCall(0).args[0].coin.should.equal('bch');
-              helpers.createAndPublishTxProposal(clients[0], {
-                toAddress: paypro.toAddress,
-                amount: paypro.amount,
-                message: paypro.memo,
-                payProUrl: opts.payProUrl,
-              }, function(err, x) {
-                should.not.exist(err);
-                done();
-              });
-            });
-          });
-        });
-      });
-
-      it('Should send correct refund address', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
-
-            clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
-
-              should.not.exist(err);
-              var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var refund_to = p.get('refund_to');
-              refund_to.length.should.equal(1);
-
-              refund_to = refund_to[0];
-
-              var amount = refund_to.get('amount')
-              amount.low.should.equal(830600);
-              amount.high.should.equal(0);
-              var s = refund_to.get('script');
-              s = new Bitcore_['bch'].Script(s.buffer.slice(s.offset, s.limit));
-              var addr = new Bitcore_['bch'].Address.fromScript(s);
-              var addrStr = addr.toLegacyAddress();
-              addrStr.should.equal(changeAddress);
-              done();
-            });
-          });
-        });
-      });
-
-      it('Should send the signed tx in paypro', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
-
-            clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
-              should.not.exist(err);
-              var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var rawTx = p.get('transactions')[0].toBuffer();
-              var tx = new  Bitcore_['bch'].Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
               done();
@@ -5506,10 +5274,9 @@ describe('client API', function() {
   });
 
   var addrMap = {
-    btc: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3','1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
-    bch: ['CfNCvxmKYzZsS78pDKKfrDd2doZt3w4jUs','CXivsT4p9F6Us1oQGfo6oJpKiDovJjRVUE']
+    ltz: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3','1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
   };
-  _.each(['bch', 'btc'], function(coin) {
+  _.each(['ltz'], function(coin) {
     var addr= addrMap[coin];
 
     describe('Sweep paper wallet ' + coin, function() {
@@ -5637,15 +5404,15 @@ describe('client API', function() {
         }],
         expected: '0.01',
       }, {
-        args: [1, 'btc'],
+        args: [1, 'ltz'],
         expected: '0.00',
       }, {
-        args: [1, 'btc', {
+        args: [1, 'ltz', {
           fullPrecision: true
         }],
         expected: '0.00000001',
       }, {
-        args: [1234567899999, 'btc', {
+        args: [1234567899999, 'ltz', {
           thousandsSeparator: ' ',
           decimalSeparator: ','
         }],

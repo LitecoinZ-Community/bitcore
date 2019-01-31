@@ -2,16 +2,16 @@
   "name": "ltzcore-wallet-client",
   "main": "index.js",
   "version": "2.1.1",
-  "homepage": "https://github.com/bitpay/ltzcore-wallet-client",
+  "homepage": "https://github.com/LitecoinZ-Community/ltzcore-wallet-client",
   "authors": ["BitPay Inc"],
   "description": "Client for ltzcore-wallet-service",
   "keywords": [
-    "bitcoin",
+    "litecoinz",
     "copay",
     "multisig",
     "wallet",
     "client",
-    "bitcore"
+    "ltzcore"
   ],
   "ignore": [
     "**/.*",

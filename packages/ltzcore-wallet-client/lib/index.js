@@ -17,6 +17,5 @@ client.Verifier = require('./verifier');
 client.Utils = require('./common/utils');
 client.sjcl = require('sjcl');
 
-// Expose bitcore
+// Expose ltzcore
 client.Bitcore = require('ltzcore-lib');
-client.BitcoreCash = require('bitcore-lib-cash');
