@@ -2,9 +2,9 @@
 
 [![NPM Package](https://img.shields.io/npm/v/ltzcore-wallet.svg?style=flat-square)](https://www.npmjs.org/package/ltzcore-wallet)
 
-A simple Command Line Interface Wallet using [Bitcore Wallet Service] (https://github.com/bitpay/ltzcore-wallet-service) and its *official* client lib, ltzcore-wallet-client] (https://github.com/bitpay/ltzcore-wallet-client)
+A simple Command Line Interface Wallet using [Ltzcore Wallet Service] (https://github.com/LitecoinZ-Community/ltzcore-wallet-service) and its *official* client lib, ltzcore-wallet-client] (https://github.com/LitecoinZ-Community/ltzcore-wallet-client)
 
-This can be used to operate Bitcoin and Bitcoin Cash wallets.
+This can be used to operate LitecoinZ wallet.
 
 
 # Quick Guide
@@ -13,7 +13,7 @@ This can be used to operate Bitcoin and Bitcoin Cash wallets.
 # Use -h or BWS_HOST to setup the BWS URL (defaults to localhost:3001)
 # 
 # Start a local BWS instance be doing:
-# git clone https://github.com/bitpay/ltzcore-wallet-service.git bws
+# git clone https://github.com/LitecoinZ-Community/ltzcore-wallet-service.git bws
 # cd bws; npm install; npm start
 
 cd bin
@@ -46,18 +46,18 @@ wallet address
 # Check your balance
 wallet balance
    
-# Spend coins. Amount can be specified in btc, bit or sat (default)
+# Spend coins. Amount can be specified in ltz, bit or sat (default)
 wallet send 1xxxxx 1000bit "1000 bits to mother"
   * Tx created: ID 01425517364314b9ac6017-e97d-46d5-a12a-9d4e5550abef [pending]
     RequiredSignatures: 2
 
-# You can use 1000bit or 0.0001btc or 100000sat. (Set BIT_UNIT to btc/sat/bit to select output unit).
+# You can use 1000bit or 0.0001ltz or 100000sat. (Set BIT_UNIT to ltz/sat/bit to select output unit).
 
 It is also possible to use Payment Protocol or BIP21. Examples:
 
 
-wallet send 'bitcoin:?r=https://bitpay.com/i/8rR7ydnLfQGqnRW1mqvXxJ'
-wallet send 'bitcoin:1N4zjmp1ojRborDiAu62MyCpaz9wjhPLM?amount=1'
+wallet send 'litecoinz:?r=https://litecoinz.org/i/8rR7ydnLfQGqnRW1mqvXxJ'
+wallet send 'litecoinz:1N4zjmp1ojRborDiAu62MyCpaz9wjhPLM?amount=1'
 
 
 

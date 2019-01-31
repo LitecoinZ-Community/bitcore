@@ -8,7 +8,7 @@ program = utils.configureCommander(program);
 program
   .option('-n, --network <network>', 'Network for the wallet')
   .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
-  .option('-c, --coin <coin>', 'coin (btc/bch)')
+  .option('-c, --coin <coin>', 'coin (ltz)')
   .usage('[options] <walletName> <m-n> [copayerName] <passphrase>')
   .parse(process.argv);
 
@@ -19,7 +19,7 @@ if (!args[0])
 var walletName = args[0];
 var copayerName = args[2] || process.env.USER;
 var passphrase = args[3];
-var coin  = program.coin ? program.coin : 'btc';
+var coin  = program.coin ? program.coin : 'ltz';
 var network = program.network ? program.network : 'livenet'
 
 var mn;

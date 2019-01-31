@@ -220,7 +220,7 @@ Utils.findOneTxProposal = function(txps, id) {
 };
 
 Utils.UNITS2 = {
-  'btc': 100000000,
+  'ltz': 100000000,
   'bit': 100,
   'sat': 1,
 };
@@ -251,21 +251,15 @@ Utils.configureCommander = function(program) {
   program
     .version('0.0.1')
     .option('-f, --file <filename>', 'Wallet file')
-    .option('-h, --host <host>', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
+    .option('-h, --host <host>', 'Ltzcore Wallet Service URL (eg: http://localhost:3001/copay/api')
     .option('-v, --verbose', 'be verbose')
 
   return program;
 };
 
 Utils.COIN = {
-  bch: {
-    name: 'bch',
-    toSatoshis: 100000000,
-    maxDecimals: 8,
-    minDecimals: 8,
-  },
-  btc: {
-    name: 'btc',
+  ltz: {
+    name: 'ltz',
     toSatoshis: 100000000,
     maxDecimals: 8,
     minDecimals: 8,
@@ -275,12 +269,6 @@ Utils.COIN = {
     toSatoshis: 100,
     maxDecimals: 2,
     minDecimals: 2,
-  },
-  bch: {
-    name: 'bch',
-    toSatoshis: 100000000,
-    maxDecimals: 8,
-    minDecimals: 8,
   },
  
 };
@@ -309,8 +297,8 @@ Utils.renderAmount = function(satoshis, coin, opts) {
 
   opts = opts || {};
 
-  var coin = coin || 'btc';
-  var u = Utils.COIN[coin] || Utils.COIN.btc;
+  var coin = coin || 'ltz';
+  var u = Utils.COIN[coin] || Utils.COIN.ltz;
   var amount = clipDecimals((satoshis / u.toSatoshis), u.maxDecimals).toFixed(u.maxDecimals);
   return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals) + ' ' + u.name;
 };

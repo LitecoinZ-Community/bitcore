@@ -1,20 +1,20 @@
 {
   "name": "ltzcore-wallet",
-  "description": "A CLI Mutisig HD Bitcoin Wallet, demo for Bitcore Wallet Service",
+  "description": "A CLI Mutisig HD LitecoinZ Wallet, demo for Ltzcore Wallet Service",
   "author": "BitPay Inc",
   "version": "8.0.0",
   "keywords": [
-    "bitcoin",
+    "litecoinz",
     "copay",
     "multisig",
     "wallet"
   ],
   "repository": {
-    "url": "git@github.com:bitpay/ltzcore-wallet.git",
+    "url": "git@github.com:LitecoinZ-Community/ltzcore-wallet.git",
     "type": "git"
   },
   "bugs": {
-    "url": "https://github.com/bitpay/ltzcore-wallet/issues"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-wallet/issues"
   },
   "dependencies": {
     "async": "^2.5.0",
@@ -45,6 +45,10 @@
     {
       "name": "Matias Alejo Garcia",
       "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "The LitecoinZ Community",
+      "email": "community@litecoinz.org"
     }
   ],
   "bin": {
