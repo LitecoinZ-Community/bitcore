@@ -8,8 +8,7 @@ log.debug = log.verbose;
 log.disableColor();
 
 var Bitcore = {
-  'btc': require('ltzcore-lib'),
-  'bch': require('bitcore-lib-cash'),
+  'ltz': require('ltzcore-lib')
 };
 
 var Common = require('../common');
@@ -189,7 +188,7 @@ TxProposal.prototype._buildTx = function() {
     });
   }
 
-  // Validate actual inputs vs outputs independently of Bitcore
+  // Validate actual inputs vs outputs independently of Ltzcore
   var totalInputs = _.sumBy(t.inputs, 'output.satoshis');
   var totalOutputs = _.sumBy(t.outputs, 'satoshis');
 

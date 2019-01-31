@@ -16,8 +16,7 @@ var config = require('../test-config');
 
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  ltz: Bitcore
 };
 
 var Common = require('../../lib/common');
@@ -148,20 +147,18 @@ helpers._generateCopayersTestData = function() {
 
     var xpriv_45H = xpriv.deriveChild(45, true);
     var xpub_45H = Bitcore.HDPublicKey(xpriv_45H);
-    var id45 = Model.Copayer._xPubToCopayerId('btc', xpub_45H.toString());
+    var id45 = Model.Copayer._xPubToCopayerId('ltz', xpub_45H.toString());
 
     var xpriv_44H_0H_0H = xpriv.deriveChild(44, true).deriveChild(0, true).deriveChild(0, true);
     var xpub_44H_0H_0H = Bitcore.HDPublicKey(xpriv_44H_0H_0H);
-    var id44btc = Model.Copayer._xPubToCopayerId('btc', xpub_44H_0H_0H.toString());
-    var id44bch = Model.Copayer._xPubToCopayerId('bch', xpub_44H_0H_0H.toString());
+    var id44ltz = Model.Copayer._xPubToCopayerId('ltz', xpub_44H_0H_0H.toString());
 
     var xpriv_1H = xpriv.deriveChild(1, true);
     var xpub_1H = Bitcore.HDPublicKey(xpriv_1H);
     var priv = xpriv_1H.deriveChild(0).privateKey;
     var pub = xpub_1H.deriveChild(0).publicKey;
 
-    console.log('{id44btc: ', "'" + id44btc + "',");
-    console.log('id44bch: ', "'" + id44bch + "',");
+    console.log('{id44ltz: ', "'" + id44ltz + "',");
     console.log('id45: ', "'" + id45 + "',");
     console.log('xPrivKey: ', "'" + xpriv.toString() + "',");
     console.log('xPubKey: ', "'" + xpub.toString() + "',");
@@ -200,9 +197,8 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     n: n,
     pubKey: TestData.keyPair.pub,
     singleAddress: !!opts.singleAddress,
-    coin: opts.coin || 'btc',
+    coin: opts.coin || 'ltz',
     network: opts.network || 'livenet',
-    nativeCashAddr: opts.nativeCashAddr,
   };
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
@@ -255,11 +251,11 @@ helpers.randomTXID = function() {
   return Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex');;
 };
 
-helpers.toSatoshi = function(btc) {
-  if (_.isArray(btc)) {
-    return _.map(btc, helpers.toSatoshi);
+helpers.toSatoshi = function(ltz) {
+  if (_.isArray(ltz)) {
+    return _.map(ltz, helpers.toSatoshi);
   } else {
-    return Utils.strip(btc * 1e8);
+    return Utils.strip(ltz * 1e8);
   }
 };
 
@@ -271,7 +267,7 @@ helpers._parseAmount = function(str) {
 
   if (_.isNumber(str)) str = str.toString();
 
-  var re = /^((?:\d+c)|u)?\s*([\d\.]+)\s*(btc|bit|sat)?$/;
+  var re = /^((?:\d+c)|u)?\s*([\d\.]+)\s*(ltz|bit|sat)?$/;
   var match = str.match(re);
 
   if (!match) throw new Error('Could not parse amount ' + str);
@@ -283,7 +279,7 @@ helpers._parseAmount = function(str) {
 
   switch (match[3]) {
     default:
-    case 'btc':
+    case 'ltz':
       result.amount = Utils.strip(+match[2] * 1e8);
       break;
     case 'bit':
@@ -426,8 +422,8 @@ helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
 };
 
 
-helpers.stubCheckData = function(bc, server, isBCH, cb) {
-  server.storage.walletCheck({walletId:server.walletId, bch: isBCH}).then((x) => {
+helpers.stubCheckData = function(bc, server, cb) {
+  server.storage.walletCheck({walletId:server.walletId}).then((x) => {
     bc.getCheckData = sinon.stub().callsArgWith(1, null, {sum: x.sum});
     return cb();
   });

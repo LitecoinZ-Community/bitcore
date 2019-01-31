@@ -1,29 +1,28 @@
 {
   "name": "ltzcore-wallet-service",
-  "description": "A service for Mutisig HD Bitcoin Wallets",
+  "description": "A service for Mutisig HD LitecoinZ Wallets",
   "author": "BitPay Inc",
   "version": "8.0.0",
   "license": "MIT",
   "keywords": [
-    "bitcoin",
+    "litecoinz",
     "copay",
     "multisig",
     "wallet",
-    "bitcore",
+    "ltzcore",
     "BWS"
   ],
   "repository": {
-    "url": "git@github.com:bitpay/ltzcore-wallet-service.git",
+    "url": "git@github.com:LitecoinZ-Community/ltzcore-wallet-service.git",
     "type": "git"
   },
   "bugs": {
-    "url": "https://github.com/bitpay/ltzcore-wallet-service/issues"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-wallet-service/issues"
   },
   "dependencies": {
     "@sendgrid/mail": "^6.3.1",
     "async": "^0.9.2",
     "ltzcore-lib": "^8.0.0",
-    "bitcore-lib-cash": "^8.0.0",
     "body-parser": "^1.11.0",
     "compression": "^1.6.2",
     "email-validator": "^1.0.1",
@@ -68,7 +67,7 @@
     "test:ci": "npm run test",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
-  "bitcoreNode": "./bitcorenode",
+  "ltzcoreNode": "./ltzcorenode",
   "contributors": [
     {
       "name": "Braydon Fuller",
@@ -81,6 +80,10 @@
     {
       "name": "Matias Alejo Garcia",
       "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "The LitecoinZ Community",
+      "email": "community@litecoinz.org"
     }
   ]
 }

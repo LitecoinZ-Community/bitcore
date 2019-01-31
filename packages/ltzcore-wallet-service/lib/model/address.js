@@ -4,8 +4,7 @@ var $ = require('preconditions').singleton();
 var _ = require('lodash');
 
 var Bitcore = {
-  'btc': require('ltzcore-lib'),
-  'bch': require('bitcore-lib-cash'),
+  'ltz': require('ltzcore-lib')
 };
 var Common = require('../common');
 var Constants = Common.Constants,
@@ -54,7 +53,7 @@ Address.fromObj = function(obj) {
   return x;
 };
 
-Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr) {
+Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, network) {
   $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
 
   var publicKeys = _.map(publicKeyRing, function(item) {
@@ -73,15 +72,9 @@ Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, netw
       break;
   }
 
-
-
   let addrStr = bitcoreAddress.toString(true); 
-  if (noNativeCashAddr && coin == 'bch') {
-    addrStr =  bitcoreAddress.toLegacyAddress();
-  }
 
   return {
-    // bws still use legacy addresses for BCH
     address: addrStr,
     path: path,
     publicKeys: _.invokeMap(publicKeys, 'toString'),
@@ -89,9 +82,8 @@ Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, netw
 };
 
 
-// noNativeCashAddr only for testing
-Address.derive = function(walletId, scriptType, publicKeyRing, path, m, coin, network, isChange, noNativeCashAddr) {
-  var raw = Address._deriveAddress(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr);
+Address.derive = function(walletId, scriptType, publicKeyRing, path, m, coin, network, isChange) {
+  var raw = Address._deriveAddress(scriptType, publicKeyRing, path, m, coin, network);
   return Address.create(_.extend(raw, {
     coin: coin,
     walletId: walletId,

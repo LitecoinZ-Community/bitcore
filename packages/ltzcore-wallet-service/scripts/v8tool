@@ -5,7 +5,7 @@ const Bitcore = require('ltzcore-lib');
 const Client = require('../lib/blockchainexplorers/v8/client.js');
 
 
-const coin = 'BCH';
+const coin = 'LTZ';
 const network = 'mainnet';
 const authKey = process.argv[2]; 
 
@@ -25,7 +25,7 @@ const pubKey = Bitcore.PrivateKey(tmp).toPublicKey() ;
 
 //console.log(pubKey); 
 
-const baseUrl = `https://api.bitcore.io/api/${coin}/${network}/`;
+const baseUrl = `https://api.litecoinz.org/api/${coin}/${network}/`;
 let client = new Client({
   baseUrl: baseUrl,
   authKey: authKeyObj,

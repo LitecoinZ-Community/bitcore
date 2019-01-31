@@ -9,8 +9,7 @@ var secp256k1 = require('secp256k1');
 var Utils = {};
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  ltz: Bitcore
 };
 
 
@@ -34,7 +33,7 @@ Utils.strip = function(number) {
   return parseFloat(number.toPrecision(12));
 }
 
-/* TODO: It would be nice to be compatible with bitcoind signmessage. How
+/* TODO: It would be nice to be compatible with litecoinzd signmessage. How
  * the hash is calculated there? */
 Utils.hashMessage = function(text, noReverse) {
   $.checkArgument(text);
@@ -98,7 +97,7 @@ Utils._tryVerifyMessage = function(hash, sig, publicKeyBuffer) {
 
 Utils.formatAmount = function(satoshis, unit, opts) {
   var UNITS = {
-    btc: {
+    ltz: {
       toSatoshis: 100000000,
       maxDecimals: 6,
       minDecimals: 2,
@@ -112,11 +111,6 @@ Utils.formatAmount = function(satoshis, unit, opts) {
       toSatoshis: 1,
       maxDecimals: 0,
       minDecimals: 0,
-    },
-    bch: {
-      toSatoshis: 100000000,
-      maxDecimals: 6,
-      minDecimals: 2,
     },
   };
 
@@ -146,10 +140,10 @@ Utils.formatAmount = function(satoshis, unit, opts) {
 };
 
 Utils.formatAmountInBtc = function(amount) {
-  return Utils.formatAmount(amount, 'btc', {
+  return Utils.formatAmount(amount, 'ltz', {
     minDecimals: 8,
     maxDecimals: 8,
-  }) + 'btc';
+  }) + 'ltz';
 };
 
 Utils.formatUtxos = function(utxos) {
@@ -222,15 +216,10 @@ Utils.checkValueInCollection = function(value, collection) {
 
 Utils.getAddressCoin = function(address) {
   try {
-    new Bitcore_['btc'].Address(address);
-    return 'btc';
+    new Bitcore_['ltz'].Address(address);
+    return 'ltz';
   } catch (e) {
-    try {
-      new Bitcore_['bch'].Address(address);
-      return 'bch';
-    } catch (e) {
-      return;
-    }
+    return;
   }
 };
 
@@ -240,7 +229,7 @@ Utils.translateAddress = function(address, coin) {
   var origObj = origAddress.toObject();
 
   var result = Bitcore_[coin].Address.fromObject(origObj)
-  return coin == 'bch' ? result.toLegacyAddress() : result.toString();
+  return result.toString();
 };
 
 

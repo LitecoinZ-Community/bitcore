@@ -13,9 +13,6 @@ var mongodb = require('mongodb');
 
 var Model = require('./model');
 
-// only for migration
-var BCHAddressTranslator = require('./bchaddresstranslator');
-
 var collections = {
   WALLETS: 'wallets',
   TXS: 'txs',
@@ -491,38 +488,6 @@ Storage.prototype.fetchAddresses = function(walletId, cb) {
   });
 };
 
-Storage.prototype.migrateToCashAddr = function(walletId, cb) {
-  var self = this;
-
-  var cursor = self.db.collection(collections.ADDRESSES).find({
-    walletId: walletId,
-  });
-
-
-  cursor.on("end", function() {
-    console.log(`Migration to cash address of ${walletId} Finished`);
-    return self.clearWalletCache(walletId,cb);
-  }); 
-
-  cursor.on("err", function(err) {
-    return cb(err);
-  });
-
-  cursor.on("data", function(doc) {
-      cursor.pause();
-      let x;
-      try {
-        x = BCHAddressTranslator.translate(doc.address, 'cashaddr');
-      } catch (e) {
-        return cb(e);
-      }
-
-      self.db.collection(collections.ADDRESSES).update({_id: doc._id}, {$set:{address: x}}, {multi:true});
-      cursor.resume();
-  });
-};
-
-
 Storage.prototype.fetchUnsyncAddresses = function(walletId, cb) {
   var self = this;
 
@@ -655,7 +620,7 @@ Storage.prototype.fetchAddressByCoin = function(coin, address, cb) {
     if (!result || _.isEmpty(result)) return cb();
     if (result.length > 1) {
       result = _.find(result, function(address) {
-        return coin == (address.coin || 'btc');
+        return coin == (address.coin || 'ltz');
       });
     } else {
       result = _.head(result);
@@ -1228,7 +1193,7 @@ Storage.prototype.clearGlobalCache = function (key, cb) {
 
 
 Storage.prototype.walletCheck = async function(params) {
-  let { walletId, bch } = params;
+  let { walletId } = params;
   var self = this;
 
   return new Promise(resolve => {
@@ -1240,12 +1205,6 @@ Storage.prototype.walletCheck = async function(params) {
 
       if (walletAddress.address) {
         let addr = walletAddress.address;
-
-        // TODO remove on native cashaddr
-        if (bch) {
-          addr = BCHAddressTranslator.translate(addr, 'cashaddr', 'copay');
-          $.checkState(addr, 'ERROR: wrong addr format on DB for wallet:' + walletId);
-        }
 
         lastAddress = addr;
         const addressSum = Buffer.from(addr).reduce(

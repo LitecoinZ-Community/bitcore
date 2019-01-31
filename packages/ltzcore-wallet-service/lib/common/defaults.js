@@ -25,7 +25,7 @@ Defaults.MAX_MAIN_ADDRESS_GAP = 20;
 Defaults.SCAN_ADDRESS_GAP = Defaults.MAX_MAIN_ADDRESS_GAP + 10;
 
 Defaults.FEE_LEVELS = {
-  btc: [{
+  ltz: [{
     name: 'urgent',
     nbBlocks: 2,
     multiplier: 1.5,
@@ -46,18 +46,13 @@ Defaults.FEE_LEVELS = {
     name: 'superEconomy',
     nbBlocks: 24,
     defaultValue: 20000
-  }],
-  bch: [{
-    name: 'normal',
-    nbBlocks: 2,
-    defaultValue: 2000,
   }]
 };
 
 // How many levels to fallback to if the value returned by the network for a given nbBlocks is -1
 Defaults.FEE_LEVELS_FALLBACK = 2;
 
-Defaults.FIAT_RATE_PROVIDER = 'BitPay';
+Defaults.FIAT_RATE_PROVIDER = 'LitecoinZ';
 Defaults.FIAT_RATE_FETCH_INTERVAL = 10; // In minutes
 Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME = 120; // In minutes
 
@@ -129,7 +124,7 @@ Defaults.RateLimit = {
   // },
 };
 
-Defaults.COIN = 'btc';
+Defaults.COIN = 'ltz';
 Defaults.INSIGHT_REQUEST_POOL_SIZE = 10;
 Defaults.INSIGHT_TIMEOUT = 30000;
 

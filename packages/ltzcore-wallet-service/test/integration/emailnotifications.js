@@ -29,7 +29,7 @@ describe('Email notifications', function() {
   describe('1-1 wallet', function() {
     beforeEach(function(done) {
       helpers.beforeEach(function(res) {
-        helpers.createAndJoinWallet(1, 1,  {coin:'bch'}, function(s, w) {
+        helpers.createAndJoinWallet(1, 1,  {coin:'ltz'}, function(s, w) {
           server = s;
           wallet = w;
 
@@ -59,13 +59,9 @@ describe('Email notifications', function() {
                 from: 'bws@dummy.net',
                 subjectPrefix: '[test wallet]',
                 publicTxUrlTemplate: {
-                  btc: {
-                    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
-                  },
-                  bch: {
-                    livenet: 'https://bch-insight.bitpay.com/#/tx/{{txid}}',
-                    testnet: 'https://test-bch-insight.bitpay.com/#/tx/{{txid}}',
+                  ltz: {
+                    livenet: 'https://insight.litecoinz.org/tx/{{txid}}',
+                    testnet: 'https://test-insight.litecoinz.org/tx/{{txid}}',
                   }
                 },
               },
@@ -74,39 +70,6 @@ describe('Email notifications', function() {
               done();
             });
           });
-        });
-      });
-    });
-
- 
-
-    it('should handle small incomming payments (bch)', function(done) {
-      server.createAddress({}, function(err, address) {
-        should.not.exist(err);
-
-        // Simulate incoming tx notification
-        server._notify('NewIncomingTx', {
-          txid: '999',
-          address: address,
-          amount: 221340,
-        }, function(err) {
-          setTimeout(function() {
-            var calls = mailerStub.send.getCalls();
-            calls.length.should.equal(1);
-            var emails = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            _.difference(['copayer1@domain.com'], _.map(emails, 'to')).should.be.empty;
-            var one = emails[0];
-            one.from.should.equal('bws@dummy.net');
-            one.subject.should.contain('New payment received');
-            one.text.should.contain('0.002213 BCH');
-            server.storage.fetchUnsentEmails(function(err, unsent) {
-              should.not.exist(err);
-              unsent.should.be.empty;
-              done();
-            });
-          }, 100);
         });
       });
     });
@@ -147,14 +110,10 @@ describe('Email notifications', function() {
                 from: 'bws@dummy.net',
                 subjectPrefix: '[test wallet]',
                 publicTxUrlTemplate: {
-                  btc: {
-                    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+                  ltz: {
+                    livenet: 'https://insight.litecoinz.org/tx/{{txid}}',
+                    testnet: 'https://test-insight.litecoinz.org/tx/{{txid}}',
                   },
-                  bch: {
-                    livenet: 'https://bch-insight.bitpay.com/#/tx/{{txid}}',
-                    testnet: 'https://test-bch-insight.bitpay.com/#/tx/{{txid}}',
-                  }
                 },
               },
             }, function(err) {
@@ -269,7 +228,7 @@ describe('Email notifications', function() {
             txp = t;
             async.eachSeries(_.range(2), function(i, next) {
               var copayer = TestData.copayers[i];
-              helpers.getAuthServer(copayer.id44btc, function(server) {
+              helpers.getAuthServer(copayer.id44ltz, function(server) {
                 var signatures = helpers.clientSign(txp, copayer.xPrivKey_44H_0H_0H);
                 server.signTx({
                   txProposalId: txp.id,
@@ -301,7 +260,7 @@ describe('Email notifications', function() {
             one.subject.should.contain('Payment sent');
             one.text.should.contain('800,000');
             should.exist(one.html);
-            one.html.should.contain('https://insight.bitpay.com/tx/' + txp.txid);
+            one.html.should.contain('https://insight.litecoinz.org/tx/' + txp.txid);
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
               unsent.should.be.empty;
@@ -335,7 +294,7 @@ describe('Email notifications', function() {
             txpId = txp.id;
             async.eachSeries(_.range(1, 3), function(i, next) {
               var copayer = TestData.copayers[i];
-              helpers.getAuthServer(copayer.id44btc, function(server) {
+              helpers.getAuthServer(copayer.id44ltz, function(server) {
                 server.rejectTx({
                   txProposalId: txp.id,
                 }, next);
@@ -365,7 +324,7 @@ describe('Email notifications', function() {
     });
 
 
-    it('should handle small incomming payments (btc)', function(done) {
+    it('should handle small incomming payments (ltz)', function(done) {
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -504,7 +463,7 @@ describe('Email notifications', function() {
       server.savePreferences({
         email: 'copayer1@domain.com',
         language: 'es',
-        unit: 'btc',
+        unit: 'ltz',
       }, function(err) {
         server.createAddress({}, function(err, address) {
           should.not.exist(err);
@@ -526,7 +485,7 @@ describe('Email notifications', function() {
               });
               spanish.from.should.equal('bws@dummy.net');
               spanish.subject.should.contain('Nuevo pago recibido');
-              spanish.text.should.contain('0.123 BTC');
+              spanish.text.should.contain('0.123 LTZ');
               var english = _.find(emails, {
                 to: 'copayer2@domain.com'
               });
@@ -649,13 +608,9 @@ describe('Email notifications', function() {
                 from: 'bws@dummy.net',
                 subjectPrefix: '[test wallet]',
                 publicTxUrlTemplate: {
-                  btc: {
-                    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
-                  },
-                  bch: {
-                    livenet: 'https://bch-insight.bitpay.com/#/tx/{{txid}}',
-                    testnet: 'https://test-bch-insight.bitpay.com/#/tx/{{txid}}',
+                  ltz: {
+                    livenet: 'https://insight.litecoinz.ororg/tx/{{txid}}',
+                    testnet: 'https://test-insight.litecoinz.org/tx/{{txid}}',
                   }
                 },
               },

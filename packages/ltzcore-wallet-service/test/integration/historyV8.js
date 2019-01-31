@@ -12,8 +12,7 @@ log.level = 'info';
 
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  ltz: Bitcore,
 };
 
 var Common = require('../../lib/common');
@@ -61,7 +60,7 @@ describe('History V8', function() {
           helpers.stubFeeLevels({
             24: 10000,
           });
-          helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', done);
+          helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'ltz', done);
         });
       });
     });
@@ -82,7 +81,7 @@ describe('History V8', function() {
           helpers.stubFeeLevels({
             24: 10000,
           });
-          helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', done);
+          helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'ltz', done);
         });
       });
     });
@@ -612,7 +611,7 @@ describe('History V8', function() {
               ]; 
  
               helpers.stubHistoryV8(null, null,txs);
-              helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', () =>{ 
+              helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'ltz', () =>{ 
               server.getTxHistory({}, function(err, txs) {
                 should.not.exist(err);
                 should.exist(txs);

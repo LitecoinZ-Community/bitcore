@@ -5,7 +5,6 @@ var $ = require('preconditions').singleton();
 var async = require('async');
 var log = require('npmlog');
 var serverMessages = require('../serverMessages');
-var BCHAddressTranslator = require('./bchaddresstranslator');
 
 log.debug = log.verbose;
 log.disableColor();
@@ -15,8 +14,7 @@ var Stringify = require('json-stable-stringify');
 
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  ltz: Bitcore
 };
 
 var Common = require('./common');
@@ -49,7 +47,7 @@ var fiatRateService;
 var serviceVersion;
 
 /**
- * Creates an instance of the Bitcore Wallet Service.
+ * Creates an instance of the Ltzcore Wallet Service.
  * @constructor
  */
 function WalletService() {
@@ -409,8 +407,8 @@ WalletService.prototype.logout = function(opts, cb) {
  * @param {number} opts.n - Total copayers.
  * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
  * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
- * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch).
- * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
+ * @param {string} opts.coin[='ltz'] - The coin for this wallet.
+ * @param {string} opts.network[='livenet'] - The LitecoinZ network for this wallet.
  * @param {string} opts.supportBIP44AndP2PKH[=true] - Client supports BIP44 & P2PKH for new wallets.
  */
 WalletService.prototype.createWallet = function(opts, cb) {
@@ -479,7 +477,6 @@ WalletService.prototype.createWallet = function(opts, cb) {
         singleAddress: !!opts.singleAddress,
         derivationStrategy: derivationStrategy,
         addressType: addressType,
-        nativeCashAddr: opts.nativeCashAddr,
       });
       self.storage.storeWallet(wallet, function(err) {
         self.logi('Wallet created', wallet.id, opts.network);
@@ -504,23 +501,7 @@ WalletService.prototype.getWallet = function(opts, cb) {
     if (err) return cb(err);
     if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-    // cashAddress migration
-    if (wallet.coin != 'bch' || wallet.nativeCashAddr)  
-      return cb(null, wallet);
-
-    // only for testing
-    if (opts.doNotMigrate) return cb(null, wallet);
-
-    // remove someday...
-    log.info(`Migrating wallet ${wallet.id} to cashAddr`);
-    self.storage.migrateToCashAddr(self.walletId,(e)=> {
-      if (e) return cb(e);
-      wallet.nativeCashAddr=true;
-      return self.storage.storeWallet(wallet, (e)=> {
-        if (e) return cb(e);
-        return cb(e, wallet);
-      });
-    });
+    return cb(null, wallet);
   });
 };
 
@@ -898,7 +879,7 @@ WalletService._getCopayerHash = function(name, xPubKey, requestPubKey) {
  * Joins a wallet in creation.
  * @param {Object} opts
  * @param {string} opts.walletId - The wallet id.
- * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch).
+ * @param {string} opts.coin[='ltz'] - The expected coin for this wallet.
  * @param {string} opts.name - The copayer name.
  * @param {string} opts.xPubKey - Extended Public Key for this copayer.
  * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
@@ -979,7 +960,7 @@ WalletService.prototype.joinWallet = function(opts, cb) {
  * @param {Object} opts
  * @param {string} opts.email - Email address for notifications.
  * @param {string} opts.language - Language used for notifications.
- * @param {string} opts.unit - Bitcoin unit used to format amounts in notifications.
+ * @param {string} opts.unit - LitecoinZ unit used to format amounts in notifications.
  */
 WalletService.prototype.savePreferences = function(opts, cb) {
   var self = this;
@@ -999,7 +980,7 @@ WalletService.prototype.savePreferences = function(opts, cb) {
   }, {
     name: 'unit',
     isValid: function(value) {
-      return _.isString(value) && _.includes(['btc', 'bit'], value.toLowerCase());
+      return _.isString(value) && _.includes(['ltz', 'bit'], value.toLowerCase());
     },
   }];
 
@@ -1103,7 +1084,6 @@ WalletService.prototype._store = function(wallet, address, cb, checkSync) {
  * Creates a new address.
  * @param {Object} opts
  * @param {Boolean} [opts.ignoreMaxGap=false] - Ignore constraint of maximum number of consecutive addresses without activity
- * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
  * @returns {Address} address
  */
 WalletService.prototype.createAddress = function(opts, cb) {
@@ -1155,10 +1135,6 @@ WalletService.prototype.createAddress = function(opts, cb) {
         return createFn(wallet, (err, address) => {
           if (err) {
             return cb(err);
-          }
-
-          if (wallet.coin == 'bch' && opts.noCashAddr) {
-            address.address = BCHAddressTranslator.translate(address.address, 'copay');
           }
 
           return cb(err, address);
@@ -1654,8 +1630,8 @@ WalletService.prototype._sampleFeeLevels = function(coin, network, points, cb) {
 /**
  * Returns fee levels for the current state of the network.
  * @param {Object} opts
- * @param {string} [opts.coin = 'btc'] - The coin to estimate fee levels from.
- * @param {string} [opts.network = 'livenet'] - The Bitcoin network to estimate fee levels from.
+ * @param {string} [opts.coin = 'ltz'] - The coin to estimate fee levels from.
+ * @param {string} [opts.network = 'livenet'] - The LitecoinZ network to estimate fee levels from.
  * @returns {Object} feeLevels - A list of fee levels & associated amount per kB in satoshi.
  */
 WalletService.prototype.getFeeLevels = function(opts, cb) {
@@ -1772,7 +1748,7 @@ WalletService.prototype._checkTx = function(txp) {
       txp.fee = bitcoreTx.getFee();
     }
   } catch (ex) {
-    self.logw('Error building Bitcore transaction', ex);
+    self.logw('Error building Ltzcore transaction', ex);
     return ex;
   }
 
@@ -2074,11 +2050,6 @@ WalletService.prototype._validateAddr = function(wallet, inaddr, opts) {
     return Errors.INCORRECT_ADDRESS_NETWORK;
   }
 
-  if (wallet.coin == 'bch' && !opts.noCashAddr) {
-    if (addr.toString(true) !=  inaddr)
-    return Errors.ONLY_CASHADDR;
-  }
-
   return;
 };
 
@@ -2178,39 +2149,6 @@ WalletService.prototype._validateAndSanitizeTxOpts = function(wallet, opts, cb) 
       }
       next();
     },
-    function(next) {
-      // check outputs are on 'copay' format for BCH
-      if (wallet.coin != 'bch') return next();
-      if (!opts.noCashAddr) return next();
-
-      // TODO remove one cashaddr is used internally (noCashAddr flag)?
-      opts.origAddrOutputs = _.map(opts.outputs, (x) => {
-        let ret =   {
-          'toAddress': x.toAddress, 
-          'amount': x.amount,
-        };
-        if (x.message)
-          ret.message = x.message;
-
-        return ret;
-      });
-      opts.returnOrigAddrOutputs = false;
-      _.each(opts.outputs, (x) => {
-        if (!x.toAddress) return;
-
-        let newAddr;
-        try {
-          newAddr = Bitcore_['bch'].Address(x.toAddress).toLegacyAddress();
-        } catch (e) {
-          return next(e);
-        }
-        if (x.txAddress != newAddr) {
-          x.toAddress = newAddr;
-          opts.returnOrigAddrOutputs = true;
-        }
-      });
-      next();
-    },
   ], cb);
 };
 
@@ -2256,7 +2194,6 @@ WalletService.prototype._getFeePerKb = function(wallet, opts, cb) {
  * @param {Array} opts.inputs - Optional. Inputs for this TX
  * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
  * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
- * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
  * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
  */
 WalletService.prototype.createTx = function(opts, cb) {
@@ -2379,28 +2316,11 @@ WalletService.prototype.createTx = function(opts, cb) {
           function(next) {
 
             if (opts.dryRun) return next();
-
-            if (txp.coin == 'bch') {
-
-              if (opts.noCashAddr && txp.changeAddress) {
-                txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
-              }
-            }
-
-
             self.storage.storeTx(wallet.id, txp, next);
           },
         ], function(err) {
+
           if (err) return cb(err);
-
-            if (txp.coin == 'bch') {
-              if (opts.returnOrigAddrOutputs) {
-                log.info('Returning Orig BCH address outputs for compat');
-                txp.outputs = opts.origAddrOutputs;
-              }
-            }
-
-
           return cb(null, txp);
         });
 
@@ -2418,7 +2338,6 @@ WalletService.prototype._verifyRequestPubKey = function(requestPubKey, signature
  * @param {Object} opts
  * @param {string} opts.txProposalId - The tx id.
  * @param {string} opts.proposalSignature - S(raw tx). Used by other copayers to verify the proposal.
- * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
  */
 WalletService.prototype.publishTx = function(opts, cb) {
   var self = this;
@@ -2482,15 +2401,6 @@ WalletService.prototype.publishTx = function(opts, cb) {
             if (err) return cb(err);
 
             self._notifyTxProposalAction('NewTxProposal', txp, function() {
-
-
-              if (opts.noCashAddr && txp.coin == 'bch') {
-                if (txp.changeAddress) {
-                  txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
-                }
-              }
-
-
               return cb(null, txp);
             });
           });
@@ -2660,8 +2570,8 @@ WalletService.prototype._broadcastRawTx = function(coin, network, raw, cb) {
 /**
  * Broadcast a raw transaction.
  * @param {Object} opts
- * @param {string} [opts.coin = 'btc'] - The coin for this transaction.
- * @param {string} [opts.network = 'livenet'] - The Bitcoin network for this transaction.
+ * @param {string} [opts.coin = 'ltz'] - The coin for this transaction.
+ * @param {string} [opts.network = 'livenet'] - The LitecoinZ network for this transaction.
  * @param {string} opts.rawTx - Raw tx data.
  */
 WalletService.prototype.broadcastRawTx = function(opts, cb) {
@@ -2891,7 +2801,6 @@ WalletService.prototype.rejectTx = function(opts, cb) {
 /**
  * Retrieves pending transaction proposals.
  * @param {Object} opts
- * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
  * @returns {TxProposal[]} Transaction proposal.
  */
 WalletService.prototype.getPendingTxs = function(opts, cb) {
@@ -2918,20 +2827,6 @@ WalletService.prototype.getPendingTxs = function(opts, cb) {
       txps = _.reject(txps, function(txp) {
         return txp.status == 'broadcasted';
       })
-
-      if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
-console.log('## [server.js.2989]'); //TODO
-        _.each(txps, (x) => {
-          if (x.changeAddress) {
-            x.changeAddress.address= BCHAddressTranslator.translate(x.changeAddress.address,'copay');
-          }
-          _.each(x.outputs, (x) => {
-            if (x.toAddress) {
-              x.toAddress= BCHAddressTranslator.translate(x.toAddress,'copay');
-            }
-          });
-        });
-      }
 
       return cb(err, txps);
     });
@@ -3209,15 +3104,14 @@ WalletService.prototype.checkWalletSync = function(bc, wallet, cb) {
       return cb(null, true);
     }
 
-    // TODO remove on native bch addr
-    self.storage.walletCheck({walletId: wallet.id, bch: wallet.coin == 'bch'})
+    self.storage.walletCheck({walletId: wallet.id})
       .then( (localCheck) => {
         bc.getCheckData(wallet, (err, serverCheck) => {
 
 
           // If there is an error, just ignore it (server does not support walletCheck)
           if (err) {
-            log.warn("Error at bitcore WalletCheck, ignoring" + err);
+            log.warn("Error at ltzcore WalletCheck, ignoring" + err);
             return cb();
           }
 
@@ -3929,7 +3823,7 @@ WalletService.prototype.startScan = function(opts, cb) {
  * @param {Object} opts
  * @param {string} opts.code - Currency ISO code.
  * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
- * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+ * @param {String} [opts.provider] - A provider of exchange rates (default 'LitecoinZ').
  * @returns {Object} rates - The exchange rate.
  */
 WalletService.prototype.getFiatRate = function(opts, cb) {

@@ -3,8 +3,7 @@
 var Constants = {};
 
 Constants.COINS = {
-  BTC: 'btc',
-  BCH: 'bch',
+  LTZ: 'ltz'
 };
 
 
@@ -13,7 +12,7 @@ Constants.NETWORKS = {
   TESTNET: 'testnet',
 };
 
-Constants.ADDRESS_FORMATS = ['copay', 'cashaddr', 'legacy'];
+Constants.ADDRESS_FORMATS = ['copay', 'legacy'];
 
 Constants.SCRIPT_TYPES = {
   P2SH: 'P2SH',

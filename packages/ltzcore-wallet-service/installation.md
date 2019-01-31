@@ -18,7 +18,7 @@ npm start
 ### Install BWS from github source
 Use the following steps to Install BWS from github source and run it with defaults.
 ```bash
-git clone https://github.com/bitpay/ltzcore-wallet-service.git
+git clone https://github.com/LitecoinZ-Community/ltzcore-wallet-service.git
 cd ltzcore-wallet-service
 npm install
 ```
@@ -27,13 +27,13 @@ To change configuration before running, see the Configuration section.
 npm start
 ```
 ### Configuration
-Configuration for all required modules can be specified in https://github.com/bitpay/ltzcore-wallet-service/blob/master/config.js
+Configuration for all required modules can be specified in https://github.com/LitecoinZ-Community/ltzcore-wallet-service/blob/master/config.js
 
 BWS is composed of 4 separate node services -
 Message Broker - messagebroker/messagebroker.js
 Blockchain Monitor - bcmonitor/bcmonitor.js (This service talks to the Blockchain Explorer service configured under blockchainExplorerOpts - see Configure blockchain service below.)
 Email Service - emailservice/emailservice.js
-Bitcore Wallet Service - bws.js
+Ltzcore Wallet Service - bws.js
 
 #### Configure MongoDB
 Example configuration for connecting to the MongoDB instance:
@@ -55,19 +55,19 @@ Example configuration for connecting to message broker service:
   }
 ```
 
-#### Configure blockchain service. Bitcore v8 is required.
+#### Configure blockchain service. Ltzcore v8 is required.
 Note: this service will be used by blockchain monitor service as well as by BWS itself.
 An example of this configuration is:
 ```javascript
   blockchainExplorerOpts: {
-      'btc': {
+      'ltz': {
         livenet: {
             provider: 'v8',
-            url: 'https://insight.bitpay.com:443',
+            url: 'https://insight.litecoinz.org:443',
          },
         testnet: {
             provider: 'v8',
-            url: 'https://test-insight.bitpay.com:443',
+            url: 'https://test-insight.litecoinz.org:443',
          },
       },
   }
@@ -81,7 +81,7 @@ Example configuration for connecting to email service (using postfix):
     port: 25,
     ignoreTLS: true,
     subjectPrefix: '[Wallet Service]',
-    from: 'wallet-service@bitcore.io',
+    from: 'wallet-service@litecoinz.org',
   }
 ```
 

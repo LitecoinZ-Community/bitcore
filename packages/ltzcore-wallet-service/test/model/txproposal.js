@@ -24,15 +24,15 @@ describe('TxProposal', function() {
       should.exist(txp);
       txp.amount.should.equal(aTXP().amount);
     });
-    it('should default to BTC coin', function() {
+    it('should default to LTZ coin', function() {
       var txp = TxProposal.fromObj(aTXP());
       should.exist(txp);
-      txp.coin.should.equal('btc');
+      txp.coin.should.equal('ltz');
     });
   });
 
   describe('#getBitcoreTx', function() {
-    it('should create a valid bitcore TX', function() {
+    it('should create a valid ltzcore TX', function() {
       var txp = TxProposal.fromObj(aTXP());
       var t = txp.getBitcoreTx();
       should.exist(t);
@@ -115,7 +115,7 @@ var theRawTx = '0100000001ab069f7073be9b491bb1ad4233a45d2e383082ccc7206df905662d
 
 var aTxpOpts = function() {
   var opts = {
-    coin: 'btc',
+    coin: 'ltz',
     network: 'livenet',
     message: 'some message'
   };

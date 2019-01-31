@@ -10,8 +10,7 @@ var Address = require('./address');
 var Copayer = require('./copayer');
 var AddressManager = require('./addressmanager');
 var Bitcore = {
-  'btc': require('ltzcore-lib'),
-  'bch': require('bitcore-lib-cash'),
+  'ltz': require('ltzcore-lib')
 };
 
 var config = require('../../config');
@@ -60,9 +59,6 @@ Wallet.create = function(opts) {
   x.beAuthPrivateKey2 = null; 
   x.beAuthPublicKey2 = null; 
 
-  // x.nativeCashAddr opts is only for testing
-  x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.coin == 'bch' ? true : null) : opts.nativeCashAddr;
-
   return x;
 };
 
@@ -97,8 +93,6 @@ Wallet.fromObj = function(obj) {
   x.beRegistered = obj.beRegistered;
   x.beAuthPrivateKey2 = obj.beAuthPrivateKey2; 
   x.beAuthPublicKey2 = obj.beAuthPublicKey2; 
-
-  x.nativeCashAddr = obj.nativeCashAddr;
 
   return x;
 };
@@ -195,7 +189,7 @@ Wallet.prototype.createAddress = function(isChange, step) {
 
   var path = this.addressManager.getNewAddressPath(isChange, step);
   log.verbose('Deriving addr:' + path);
-  var address = Address.derive(self.id, this.addressType, this.publicKeyRing, path, this.m, this.coin, this.network, isChange, !self.nativeCashAddr);
+  var address = Address.derive(self.id, this.addressType, this.publicKeyRing, path, this.m, this.coin, this.network, isChange);
   return address;
 };
 

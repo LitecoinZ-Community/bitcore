@@ -1,8 +1,8 @@
 var _ = require('lodash');
 
 var provider = {
-  name: 'BitPay',
-  url: 'https://bitpay.com/api/rates/',
+  name: 'LitecoinZ',
+  url: 'https://rates.litecoinz.org/',
   parseFn: function(raw) {
     var rates = _.compact(_.map(raw, function(d) {
       if (!d.code || !d.rate) return null;

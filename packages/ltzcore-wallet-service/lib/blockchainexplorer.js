@@ -13,15 +13,10 @@ var Constants = Common.Constants,
 
 var PROVIDERS = {
   'v8': {
-    'btc': {
-      'livenet': 'https://api.bitpay.com',
-      'testnet': 'https://api.bitpay.com',
+    'ltz': {
+      'livenet': 'https://api.litecoinz.org',
+      'testnet': 'https://api.litecoinz.org',
     },
-    'bch': {
-      'livenet': 'https://api.bitpay.com',
-      'testnet': 'https://api.bitpay.com',
-    },
- 
   },
 };
 
@@ -39,14 +34,6 @@ function BlockChainExplorer(opts) {
 
   var url = opts.url || PROVIDERS[provider][coin][network];
 
-
-  if (coin != 'bch' && opts.addressFormat)
-    throw new Error('addressFormat only supported for bch');
-
-  if (coin == 'bch' && !opts.addressFormat)
-    opts.addressFormat = 'cashaddr';
-  
-
   switch (provider) {
     case 'v8':
       return new V8({
@@ -55,7 +42,6 @@ function BlockChainExplorer(opts) {
         url: url,
         apiPrefix: opts.apiPrefix,
         userAgent: opts.userAgent,
-        addressFormat: opts.addressFormat,
       });
  
     default:

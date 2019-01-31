@@ -346,12 +346,9 @@ ExpressApp.prototype.start = function(opts, cb) {
     });
   });
 
-
-  
-  // DEPRECATED (do not use cashaddr)
   router.get('/v1/txproposals/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
-      server.getPendingTxs({noCashAddr: true}, function(err, pendings) {
+      server.getPendingTxs({}, function(err, pendings) {
         if (err) return returnError(err, res, req);
         res.json(pendings);
       });
@@ -374,10 +371,8 @@ ExpressApp.prototype.start = function(opts, cb) {
   });
 
 
-  // DEPRECATED, no cash addr
   router.post('/v2/txproposals/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
-      req.body.noCashAddr = true;
       server.createTx(req.body, function(err, txp) {
         if (err) return returnError(err, res, req);
         res.json(txp);
@@ -422,12 +417,10 @@ ExpressApp.prototype.start = function(opts, cb) {
     });
   });
 
-  // DEPRECATED (no cashaddr by default)
   router.post('/v3/addresses/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
       var opts = req.body;
       opts = opts || {};
-      opts.noCashAddr = true;
       server.createAddress(opts, function(err, address) {
         if (err) return returnError(err, res, req);
         res.json(address);
@@ -574,7 +567,6 @@ ExpressApp.prototype.start = function(opts, cb) {
   router.post('/v1/txproposals/:id/publish/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
       req.body.txProposalId = req.params['id'];
-      req.body.noCashAddr = true;
       server.publishTx(req.body, function(err, txp) {
         if (err) return returnError(err, res, req);
         res.json(txp);

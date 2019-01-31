@@ -9,11 +9,9 @@ var io = require('socket.io-client');
 const request = require('request-promise-native');
 var Common = require('../common');
 var Client;
-var BCHAddressTranslator = require('../bchaddresstranslator');
 var Bitcore = require('ltzcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  ltz: Bitcore
 };
 
 var Constants = Common.Constants,
@@ -36,10 +34,6 @@ function V8(opts) {
   this.coin = opts.coin || Defaults.COIN;
   this.network = opts.network || 'livenet';
   this.v8network = v8network(this.network);
-
-  //v8 is always cashaddr
-  this.addressFormat =  this.coin == 'bch' ? 'cashaddr' : null;
-
 
   var coin  = this.coin.toUpperCase();
 
@@ -68,36 +62,19 @@ var _parseErr = function(err, res) {
 
 // Translate Request Address query
 V8.prototype.translateQueryAddresses = function(addresses) {
-  if (!this.addressFormat) return addresses;
-
-  return BCHAddressTranslator.translate(addresses, this.addressFormat, 'copay');
+  return addresses;
 };
 
 
 // Translate Result Address
 V8.prototype.translateResultAddresses = function(addresses) {
-  if (!this.addressFormat) return addresses;
-
-  return BCHAddressTranslator.translate(addresses, 'copay', this.addressFormat);
+  return addresses;
 };
 
 
 V8.prototype.translateTx = function(tx) {
   var self = this;
-  if (!this.addressFormat) return tx;
-
-  _.each(tx.vin, function(x){
-    if (x.addr) {
-      x.addr =  self.translateResultAddresses(x.addr);
-    }
-  });
-
-
-  _.each(tx.vout, function(x){
-    if (x.scriptPubKey && x.scriptPubKey.addresses) {
-      x.scriptPubKey.addresses = self.translateResultAddresses(x.scriptPubKey.addresses);
-    }
-  });
+  return tx;
 };
 
 V8.prototype._getClient = function () {
@@ -240,7 +217,7 @@ V8.prototype.getCheckData = function(wallet, cb) {
 
 
 /**
- * Broadcast a transaction to the bitcoin network
+ * Broadcast a transaction to the litecoinz network
  */
 V8.prototype.broadcast = function(rawTx, cb) {
 
@@ -458,7 +435,7 @@ V8.prototype.initSocket = function(callbacks) {
     if (!data.address) return;
     var out;
     try {
-      let addr = self.coin == 'bch' ? BCHAddressTranslator.translate(data.address, 'copay', 'cashaddr') : data.address;
+      let addr = data.address;
       out = { 
         address: data.address,
         amount: data.value / 1e8,

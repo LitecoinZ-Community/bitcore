@@ -76,7 +76,7 @@ EmailService.prototype.start = function(opts, cb) {
   var self = this;
 
   self.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
-  self.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
+  self.defaultUnit = opts.emailOpts.defaultUnit || 'ltz';
   self.templatePath = path.normalize((opts.emailOpts.templatePath || (__dirname + '/templates')) + '/');
   self.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
   self.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
@@ -218,9 +218,8 @@ EmailService.prototype._getDataForTemplate = function(notification, recipient, c
 
   // TODO: Declare these in BWU
   var UNIT_LABELS = {
-    btc: 'BTC',
-    bit: 'bits',
-    bch: 'BCH',
+    ltz: 'LTZ',
+    bit: 'bits'
   };
 
   var data = _.cloneDeep(notification.data);

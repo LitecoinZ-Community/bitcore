@@ -29,8 +29,7 @@ BlockchainMonitor.prototype.start = function(opts, cb) {
 
     function(done) {
       self.explorers = {
-        btc: {},
-        bch: {},
+        ltz: {},
       };
 
       var coinNetworkPairs = [];
@@ -159,11 +158,6 @@ BlockchainMonitor.prototype._handleIncomingPayments = function(coin, network, da
     outs = _.compact(_.map(data.vout, function(v) {
       var addr = _.keys(v)[0];
       var amount = +v[addr];
-
-      // This is because a bug on insight, that always return no copay addr
-      if (coin == 'bch' && Utils.getAddressCoin(addr) !='bch') {
-        addr = Utils.translateAddress(addr, coin);
-      }
 
       return {
         address: addr,
