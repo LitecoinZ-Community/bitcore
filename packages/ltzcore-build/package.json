@@ -1,7 +1,7 @@
 {
   "name": "ltzcore-build",
   "version": "8.0.0",
-  "description": "A helper for common tasks to build ltzcore modules'",
+  "description": "A helper for common tasks to build ltzcore modules",
   "main": "index.js",
   "scripts": {
     "test": "gulp test"
