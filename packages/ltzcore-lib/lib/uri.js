@@ -7,10 +7,10 @@ var Address = require('./address');
 var Unit = require('./unit');
 
 /**
- * Bitcore URI
+ * Ltzcore URI
  *
- * Instantiate an URI from a bitcoin URI String or an Object. An URI instance
- * can be created with a bitcoin uri string or an object. All instances of
+ * Instantiate an URI from a litecoinz URI String or an Object. An URI instance
+ * can be created with a litecoinz uri string or an object. All instances of
  * URI are valid, the static method isValid allows checking before instantiation.
  *
  * All standard parameters can be found as members of the class, the address
@@ -20,13 +20,13 @@ var Unit = require('./unit');
  * @example
  * ```javascript
  *
- * var uri = new URI('bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2');
+ * var uri = new URI('litecoinz:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2');
  * console.log(uri.address, uri.amount);
  * ```
  *
- * @param {string|Object} data - A bitcoin URI string or an Object
+ * @param {string|Object} data - A litecoinz URI string or an Object
  * @param {Array.<string>=} knownParams - Required non-standard params
- * @throws {TypeError} Invalid bitcoin address
+ * @throws {TypeError} Invalid litecoinz address
  * @throws {TypeError} Invalid amount
  * @throws {Error} Unknown required argument
  * @returns {URI} A new valid and frozen instance of URI
@@ -78,16 +78,16 @@ URI.fromObject = function fromObject(json) {
 };
 
 /**
- * Check if an bitcoin URI string is valid
+ * Check if an litecoinz URI string is valid
  *
  * @example
  * ```javascript
  *
- * var valid = URI.isValid('bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu');
+ * var valid = URI.isValid('litecoinz:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu');
  * // true
  * ```
  *
- * @param {string|Object} data - A bitcoin URI string or an Object
+ * @param {string|Object} data - A litecoinz URI string or an Object
  * @param {Array.<string>=} knownParams - Required non-standard params
  * @returns {boolean} Result of uri validation
  */
@@ -101,17 +101,17 @@ URI.isValid = function(arg, knownParams) {
 };
 
 /**
- * Convert a bitcoin URI string into a simple object.
+ * Convert a litecoinz URI string into a simple object.
  *
- * @param {string} uri - A bitcoin URI string
- * @throws {TypeError} Invalid bitcoin URI
+ * @param {string} uri - A litecoinz URI string
+ * @throws {TypeError} Invalid litecoinz URI
  * @returns {Object} An object with the parsed params
  */
 URI.parse = function(uri) {
   var info = URL.parse(uri, true);
 
-  if (info.protocol !== 'bitcoin:') {
-    throw new TypeError('Invalid bitcoin URI');
+  if (info.protocol !== 'litecoinz:') {
+    throw new TypeError('Invalid litecoinz URI');
   }
 
   // workaround to host insensitiveness
@@ -127,7 +127,7 @@ URI.Members = ['address', 'amount', 'message', 'label', 'r'];
  * Internal function to load the URI instance with an object.
  *
  * @param {Object} obj - Object with the information
- * @throws {TypeError} Invalid bitcoin address
+ * @throws {TypeError} Invalid litecoinz address
  * @throws {TypeError} Invalid amount
  * @throws {Error} Unknown required argument
  */
@@ -135,7 +135,7 @@ URI.prototype._fromObject = function(obj) {
   /* jshint maxcomplexity: 10 */
 
   if (!Address.isValid(obj.address)) {
-    throw new TypeError('Invalid bitcoin address');
+    throw new TypeError('Invalid litecoinz address');
   }
 
   this.address = new Address(obj.address);
@@ -157,9 +157,9 @@ URI.prototype._fromObject = function(obj) {
 };
 
 /**
- * Internal function to transform a BTC string amount into satoshis
+ * Internal function to transform a LTZ string amount into satoshis
  *
- * @param {string} amount - Amount BTC string
+ * @param {string} amount - Amount LTZ string
  * @throws {TypeError} Invalid amount
  * @returns {Object} Amount represented in satoshis
  */
@@ -168,7 +168,7 @@ URI.prototype._parseAmount = function(amount) {
   if (isNaN(amount)) {
     throw new TypeError('Invalid amount');
   }
-  return Unit.fromBTC(amount).toSatoshis();
+  return Unit.fromLTZ(amount).toSatoshis();
 };
 
 URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
@@ -186,12 +186,12 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
 /**
  * Will return a the string representation of the URI
  *
- * @returns {string} Bitcoin URI string
+ * @returns {string} LitecoinZ URI string
  */
 URI.prototype.toString = function() {
   var query = {};
   if (this.amount) {
-    query.amount = Unit.fromSatoshis(this.amount).toBTC();
+    query.amount = Unit.fromSatoshis(this.amount).toLTZ();
   }
   if (this.message) {
     query.message = this.message;
@@ -205,7 +205,7 @@ URI.prototype.toString = function() {
   _.extend(query, this.extras);
 
   return URL.format({
-    protocol: 'bitcoin:',
+    protocol: 'litecoinz:',
     host: this.address,
     query: query
   });
@@ -214,7 +214,7 @@ URI.prototype.toString = function() {
 /**
  * Will return a string formatted for the console
  *
- * @returns {string} Bitcoin URI
+ * @returns {string} LitecoinZ URI
  */
 URI.prototype.inspect = function() {
   return '<URI: ' + this.toString() + '>';

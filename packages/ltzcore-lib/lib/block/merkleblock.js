@@ -185,7 +185,7 @@ MerkleBlock.prototype.filterdTxsHash = function filterdTxsHash() {
 
 /**
  * Traverse a the tree in this MerkleBlock, validating it along the way
- * Modeled after Bitcoin Core merkleblock.cpp TraverseAndExtract()
+ * Modeled after LitecoinZ Core merkleblock.cpp TraverseAndExtract()
  * @param {Number} - depth - Current height
  * @param {Number} - pos - Current position in the tree
  * @param {Object} - opts - Object with values that need to be mutated throughout the traversal
@@ -235,7 +235,7 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
 };
 
 /** Calculates the width of a merkle tree at a given height.
- *  Modeled after Bitcoin Core merkleblock.h CalcTreeWidth()
+ *  Modeled after LitecoinZ Core merkleblock.h CalcTreeWidth()
  * @param {Number} - Height at which we want the tree width
  * @returns {Number} - Width of the tree at a given height
  * @private

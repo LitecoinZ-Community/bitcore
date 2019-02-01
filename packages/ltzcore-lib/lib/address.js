@@ -162,8 +162,9 @@ Address._transformObject = function(data) {
 Address._classifyFromVersion = function(buffer) {
   var version = {};
 
-  var pubkeyhashNetwork = Networks.get(buffer[0], 'pubkeyhash');
-  var scripthashNetwork = Networks.get(buffer[0], 'scripthash');
+  var prefix = buffer[0]*256 + buffer[1];
+  var pubkeyhashNetwork = Networks.get(prefix, 'pubkeyhash');
+  var scripthashNetwork = Networks.get(prefix, 'scripthash');
 
   if (pubkeyhashNetwork) {
     version.network = pubkeyhashNetwork;
@@ -177,7 +178,7 @@ Address._classifyFromVersion = function(buffer) {
 };
 
 /**
- * Internal function to transform a bitcoin address buffer
+ * Internal function to transform a litecoinz address buffer
  *
  * @param {Buffer} buffer - An instance of a hex encoded address Buffer
  * @param {string=} network - The network: 'livenet' or 'testnet'
@@ -191,8 +192,8 @@ Address._transformBuffer = function(buffer, network, type) {
   if (!(buffer instanceof Buffer) && !(buffer instanceof Uint8Array)) {
     throw new TypeError('Address supplied is not a buffer.');
   }
-  if (buffer.length !== 1 + 20) {
-    throw new TypeError('Address buffers must be exactly 21 bytes.');
+  if (buffer.length !== 2 + 20) {
+    throw new TypeError('Address buffers must be exactly 22 bytes.');
   }
 
   var networkObj = Networks.get(network);
@@ -210,7 +211,7 @@ Address._transformBuffer = function(buffer, network, type) {
     throw new TypeError('Address has mismatched type.');
   }
 
-  info.hashBuffer = buffer.slice(1);
+  info.hashBuffer = buffer.slice(2);
   info.network = bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
@@ -252,27 +253,23 @@ Address._transformScript = function(script, network) {
 /**
  * Creates a P2SH address from a set of public keys and a threshold.
  *
- * The addresses will be sorted lexicographically, as that is the trend in bitcoin.
+ * The addresses will be sorted lexicographically, as that is the trend in litecoinz.
  * To create an address from unsorted public keys, use the {@link Script#buildMultisigOut}
  * interface.
  *
  * @param {Array} publicKeys - a set of public keys to create an address
  * @param {number} threshold - the number of signatures needed to release the funds
  * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
- * @param {boolean=} nestedWitness - if the address uses a nested p2sh witness
  * @return {Address}
  */
-Address.createMultisig = function(publicKeys, threshold, network, nestedWitness) {
+Address.createMultisig = function(publicKeys, threshold, network) {
   network = network || publicKeys[0].network || Networks.defaultNetwork;
   var redeemScript = Script.buildMultisigOut(publicKeys, threshold);
-  if (nestedWitness) {
-    return Address.payingTo(Script.buildWitnessMultisigOutFromScript(redeemScript), network);
-  }
   return Address.payingTo(redeemScript, network);
 };
 
 /**
- * Internal function to transform a bitcoin address string
+ * Internal function to transform a litecoinz address string
  *
  * @param {string} data
  * @param {String|Network=} network - either a Network instance, 'livenet', or 'testnet'
@@ -378,7 +375,7 @@ Address.fromBuffer = function(buffer, network, type) {
 /**
  * Instantiate an address from an address string
  *
- * @param {string} str - An string of the bitcoin address
+ * @param {string} str - An string of the litecoinz address
  * @param {String|Network=} network - either a Network instance, 'livenet', or 'testnet'
  * @param {string=} type - The type of address: 'script' or 'pubkey'
  * @returns {Address} A new valid and frozen instance of an Address
@@ -464,11 +461,13 @@ Address.prototype.isPayToScriptHash = function() {
 /**
  * Will return a buffer representation of the address
  *
- * @returns {Buffer} Bitcoin address buffer
+ * @returns {Buffer} LitecoinZ address buffer
  */
 Address.prototype.toBuffer = function() {
-  var version = Buffer.from([this.network[this.type]]);
-  return Buffer.concat([version, this.hashBuffer]);
+  var version = Buffer.alloc(2);
+  version.writeUInt16BE(this.network[this.type], 0);
+  var buf = Buffer.concat([version, this.hashBuffer]);
+  return buf;
 };
 
 /**
@@ -485,7 +484,7 @@ Address.prototype.toObject = Address.prototype.toJSON = function toObject() {
 /**
  * Will return a the string representation of the address
  *
- * @returns {string} Bitcoin address
+ * @returns {string} LitecoinZ address
  */
 Address.prototype.toString = function() {
   return Base58Check.encode(this.toBuffer());
@@ -494,7 +493,7 @@ Address.prototype.toString = function() {
 /**
  * Will return a string formatted for the console
  *
- * @returns {string} Bitcoin address
+ * @returns {string} LitecoinZ address
  */
 Address.prototype.inspect = function() {
   return '<Address: ' + this.toString() + ', type: ' + this.type + ', network: ' + this.network + '>';

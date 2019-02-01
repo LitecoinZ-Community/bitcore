@@ -13,7 +13,6 @@ var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
 var Signature = require('../crypto/signature');
 var Sighash = require('./sighash');
-var SighashWitness = require('./sighashwitness');
 
 var Address = require('../address');
 var UnspentOutput = require('./unspentoutput');
@@ -27,6 +26,10 @@ var Script = require('../script');
 var PrivateKey = require('../privatekey');
 var BN = require('../crypto/bn');
 
+var JSDescription = require('./jsdescription');
+var SpendDescription = require('./spenddescription');
+var OutputDescription = require('./outputdescription');
+
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
  *
@@ -39,8 +42,17 @@ function Transaction(serialized) {
   }
   this.inputs = [];
   this.outputs = [];
+  this.joinSplits = [];
+
+  this.spendDescs = [];
+  this.outputDescs = [];
+
   this._inputAmount = undefined;
   this._outputAmount = undefined;
+
+  this.fOverwintered = true;
+  this.nVersionGroupId = DEFAULT_VERSION_GROUP_ID;
+  this.nExpiryHeight = DEFAULT_EXPIRY_HEIGHT;
 
   if (serialized) {
     if (serialized instanceof Transaction) {
@@ -58,9 +70,13 @@ function Transaction(serialized) {
     this._newTransaction();
   }
 }
-var CURRENT_VERSION = 1;
+
+var CURRENT_VERSION = 4;
 var DEFAULT_NLOCKTIME = 0;
-var MAX_BLOCK_SIZE = 1000000;
+var DEFAULT_VALUEBALANCE = 0;
+var MAX_BLOCK_SIZE = 2000000;
+var DEFAULT_EXPIRY_HEIGHT = 0;
+var DEFAULT_VERSION_GROUP_ID = 0x892f2085;
 
 // Minimum amount for an output for it not to be considered a dust output
 Transaction.DUST_AMOUNT = 546;
@@ -69,7 +85,7 @@ Transaction.DUST_AMOUNT = 546;
 Transaction.FEE_SECURITY_MARGIN = 150;
 
 // max amount of satoshis in circulation
-Transaction.MAX_MONEY = 21000000 * 1e8;
+Transaction.MAX_MONEY = 84000000 * 1e8;
 
 // nlocktime limit to be considered block height rather than a timestamp
 Transaction.NLOCKTIME_BLOCKHEIGHT_LIMIT = 5e8;
@@ -107,15 +123,6 @@ var hashProperty = {
   }
 };
 
-var witnessHashProperty = {
-  configurable: false,
-  enumerable: true,
-  get: function() {
-    return new BufferReader(this._getWitnessHash()).readReverse().toString('hex');
-  }
-};
-
-Object.defineProperty(Transaction.prototype, 'witnessHash', witnessHashProperty);
 Object.defineProperty(Transaction.prototype, 'hash', hashProperty);
 Object.defineProperty(Transaction.prototype, 'id', hashProperty);
 
@@ -141,15 +148,7 @@ Transaction.prototype._getHash = function() {
 };
 
 /**
- * Retrieve the little endian hash of the transaction including witness data
- * @return {Buffer}
- */
-Transaction.prototype._getWitnessHash = function() {
-  return Hash.sha256sha256(this.toBuffer(false));
-};
-
-/**
- * Retrieve a hexa string that can be used with bitcoind's CLI interface
+ * Retrieve a hexa string that can be used with litecoinzd's CLI interface
  * (decoderawtransaction, sendrawtransaction)
  *
  * @param {Object|boolean=} unsafe if true, skip all tests. if it's an object,
@@ -159,7 +158,7 @@ Transaction.prototype._getWitnessHash = function() {
  * * `disableLargeFees`: disable checking for fees that are too large
  * * `disableIsFullySigned`: disable checking if all inputs are fully signed
  * * `disableDustOutputs`: disable checking if there are no outputs that are dust amounts
- * * `disableMoreOutputThanInput`: disable checking if the transaction spends more bitcoins than the sum of the input amounts
+ * * `disableMoreOutputThanInput`: disable checking if the transaction spends more litecoinzs than the sum of the input amounts
  * @return {string}
  */
 Transaction.prototype.serialize = function(unsafe) {
@@ -175,7 +174,7 @@ Transaction.prototype.uncheckedSerialize = Transaction.prototype.toString = func
 };
 
 /**
- * Retrieve a hexa string that can be used with bitcoind's CLI interface
+ * Retrieve a hexa string that can be used with litecoinzd's CLI interface
  * (decoderawtransaction, sendrawtransaction)
  *
  * @param {Object} opts allows to skip certain tests. {@see Transaction#serialize}
@@ -292,31 +291,26 @@ Transaction.prototype.inspect = function() {
   return '<Transaction: ' + this.uncheckedSerialize() + '>';
 };
 
-Transaction.prototype.toBuffer = function(noWitness) {
+Transaction.prototype.toBuffer = function() {
   var writer = new BufferWriter();
-  return this.toBufferWriter(writer, noWitness).toBuffer();
+  return this.toBufferWriter(writer).toBuffer();
 };
 
-Transaction.prototype.hasWitnesses = function() {
-  for (var i = 0; i < this.inputs.length; i++) {
-    if (this.inputs[i].hasWitnesses()) {
-      return true;
-    }
+Transaction.prototype.toBufferWriter = function(writer) {
+  if (!this.fOverwintered) {
+    writer.writeUInt32LE(this.version);
+  } else {
+    // We don't use bitwise operators which expect 32 bit operands and return a 32 bit signed integer.
+    // For example, var header = 0x80000000 | this.version; returns -7fffffff (-2147483645).
+    var header = 0x80000000 + this.version;
+    writer.writeUInt32LE(header);
   }
-  return false;
-};
 
-Transaction.prototype.toBufferWriter = function(writer, noWitness) {
-  writer.writeInt32LE(this.version);
-
-  var hasWitnesses = this.hasWitnesses();
-
-  if (hasWitnesses && !noWitness) {
-    writer.write(new Buffer('0001', 'hex'));
+  if (this.fOverwintered) {
+    writer.writeUInt32LE(this.nVersionGroupId);
   }
 
   writer.writeVarintNum(this.inputs.length);
-
   _.each(this.inputs, function(input) {
     input.toBufferWriter(writer);
   });
@@ -326,18 +320,39 @@ Transaction.prototype.toBufferWriter = function(writer, noWitness) {
     output.toBufferWriter(writer);
   });
 
-  if (hasWitnesses && !noWitness) {
-    _.each(this.inputs, function(input) {
-      var witnesses = input.getWitnesses();
-      writer.writeVarintNum(witnesses.length);
-      for (var j = 0; j < witnesses.length; j++) {
-        writer.writeVarintNum(witnesses[j].length);
-        writer.write(witnesses[j]);
-      }
+  writer.writeUInt32LE(this.nLockTime);
+
+  if (this.fOverwintered) {
+    writer.writeUInt32LE(this.nExpiryHeight);
+  }
+
+  if (this.version >= 4) {
+    writer.writeUInt64LE(this.valueBalance);
+    writer.writeVarintNum(this.spendDescs.length);
+    _.each(this.spendDescs, function(desc) {
+      desc.toBufferWriter(writer);
+    });
+    writer.writeVarintNum(this.outputDescs.length);
+    _.each(this.outputDescs, function(desc) {
+      desc.toBufferWriter(writer);
     });
   }
 
-  writer.writeUInt32LE(this.nLockTime);
+  if (this.version >= 2) {
+    writer.writeVarintNum(this.joinSplits.length);
+    _.each(this.joinSplits, function(jsdesc) {
+      jsdesc.toBufferWriter(writer);
+    });
+    if (this.joinSplits.length > 0) {
+      writer.write(this.joinSplitPubKey);
+      writer.write(this.joinSplitSig);
+    }
+  }
+
+  if (this.version >= 4 && !(this.spendDescs.length==0 && this.outputDescs.length==0)) {
+    writer.write(this.bindingSig);
+  }
+
   return writer;
 };
 
@@ -349,17 +364,22 @@ Transaction.prototype.fromBuffer = function(buffer) {
 Transaction.prototype.fromBufferReader = function(reader) {
   $.checkArgument(!reader.finished(), 'No transaction data received');
 
-  this.version = reader.readInt32LE();
-  var sizeTxIns = reader.readVarintNum();
+  var sizeJSDescs, sizeSpendDescs, sizeOutputDescs;
+  var header = reader.readUInt32LE();
+  this.fOverwintered = header & 0x80000000;
 
-  // check for segwit
-  var hasWitnesses = false;
-  if (sizeTxIns === 0 && reader.buf[reader.pos] !== 0) {
-    reader.pos += 1;
-    hasWitnesses = true;
-    sizeTxIns = reader.readVarintNum();
+  this.fOverwintered = ((header >>> 31) == 1);
+  if (this.fOverwintered == true) {
+    this.version = header & 0x7fffffff;
+  } else {
+    this.version = header;
   }
 
+  if ( this.version >= 3 ){
+    this.nVersionGroupId = reader.readUInt32LE();
+  }
+
+  var sizeTxIns = reader.readVarintNum();
   for (var i = 0; i < sizeTxIns; i++) {
     var input = Input.fromBufferReader(reader);
     this.inputs.push(input);
@@ -370,23 +390,43 @@ Transaction.prototype.fromBufferReader = function(reader) {
     this.outputs.push(Output.fromBufferReader(reader));
   }
 
-  if (hasWitnesses) {
-    for (var k = 0; k < sizeTxIns; k++) {
-      var itemCount = reader.readVarintNum();
-      var witnesses = [];
-      for (var l = 0; l < itemCount; l++) {
-        var size = reader.readVarintNum();
-        var item = reader.read(size);
-        witnesses.push(item);
-      }
-      this.inputs[k].setWitnesses(witnesses);
+  this.nLockTime = reader.readUInt32LE();
+
+  if (this.version >= 3) {
+    this.nExpiryHeight = reader.readUInt32LE();
+  }
+
+  if (this.version >= 4) {
+    this.valueBalance = reader.readUInt64LE();
+    sizeSpendDescs = reader.readVarintNum();
+    for (i = 0; i < sizeSpendDescs; i++) {
+      var spend = SpendDescription.fromBufferReader(reader);
+      this.spendDescs.push(spend);
+    }
+    sizeOutputDescs = reader.readVarintNum();
+    for (i = 0; i < sizeOutputDescs; i++) {
+      var output = OutputDescription.fromBufferReader(reader);
+      this.outputDescs.push(output);
+    }
+  }
+  var useGrothFlag = (this.version >= 4);
+  if (this.version >= 2) {
+    sizeJSDescs = reader.readVarintNum();
+    for (i = 0; i < sizeJSDescs; i++) {
+      this.joinSplits.push(JSDescription.fromBufferReader(reader, useGrothFlag));
+    }
+    if (sizeJSDescs > 0) {
+      this.joinSplitPubKey = reader.read(32);
+      this.joinSplitSig = reader.read(64);
     }
   }
 
-  this.nLockTime = reader.readUInt32LE();
+  if (this.version >=4 && !(sizeSpendDescs==0 && sizeOutputDescs==0)) {
+    this.bindingSig = reader.read(64);
+  }
+
   return this;
 };
-
 
 Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObject() {
   var inputs = [];
@@ -399,11 +439,50 @@ Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObjec
   });
   var obj = {
     hash: this.hash,
+    fOverwintered: this.fOverwintered,
     version: this.version,
     inputs: inputs,
     outputs: outputs,
     nLockTime: this.nLockTime
   };
+
+  if (this.fOverwintered) {
+    obj.nVersionGroupId = this.nVersionGroupId;
+    obj.nExpiryHeight = this.nExpiryHeight;
+  }
+
+  if (this.version >= 4) {
+    obj.valueBalance - this.valueBalance;
+
+    var spendDescs = [];
+    this.spendDescs.forEach(function(desc) {
+      spendDescs.push(desc.toObject());
+    });
+    obj.spendDescs = spendDescs;
+
+    var outputDescs = [];
+    this.outputDescs.forEach(function(desc) {
+      outputDescs.push(desc.toObject());
+    });
+    obj.outputDescs = outputDescs;
+  }
+
+  if (this.version >= 2) {
+    var joinSplits = [];
+    this.joinSplits.forEach(function(joinSplit) {
+      joinSplits.push(joinSplit.toObject());
+    });
+    obj.joinSplits = joinSplits;
+    if (this.joinSplits.length > 0) {
+      obj.joinSplitPubKey = BufferUtil.reverse(this.joinSplitPubKey).toString('hex');
+      obj.joinSplitSig = this.joinSplitSig.toString('hex');
+    }
+  }
+
+  if (this.version >=4 && !(this.spendDescs.length==0 && this.outputDescs.length==0)) {
+    obj.bindingSig = this.bindingSig.toString('hex');
+  }
+
   if (this._changeScript) {
     obj.changeScript = this._changeScript.toString();
   }
@@ -460,6 +539,37 @@ Transaction.prototype.fromObject = function fromObject(arg) {
   }
   this.nLockTime = transaction.nLockTime;
   this.version = transaction.version;
+
+  this.fOverwintered = transaction.fOverwintered;
+  if (this.fOverwintered) {
+    this.nExpiryHeight = transaction.nExpiryHeight;
+    this.nVersionGroupId = transaction.nVersionGroupId;
+  }
+
+  if (this.version >= 4) {
+    this.valueBalance = transaction.valueBalance;
+    _.each(transaction.spendDescs, function(desc) {
+      self.spendDescs.push(new SpendDescription(desc));
+    });
+    _.each(transaction.outputDescs, function(desc) {
+      self.outputDescs.push(new OutputDescription(desc));
+    });
+  }
+
+  if (this.version >= 2) {
+    _.each(transaction.joinSplits, function(joinSplit) {
+      self.joinSplits.push(new JSDescription(joinSplit));
+    });
+    if (self.joinSplits.length > 0) {
+      self.joinSplitPubKey = BufferUtil.reverse(new Buffer(transaction.joinSplitPubKey, 'hex'));
+      self.joinSplitSig = new Buffer(transaction.joinSplitSig, 'hex');
+    }
+  }
+
+  if (this.version >=4 && !(transaction.spendDescs.length==0 && transaction.outputDescs.length==0)) {
+     this.bindingSig = transaction.bindingSig;
+  }
+
   this._checkConsistency(arg);
   return this;
 };
@@ -553,6 +663,10 @@ Transaction.prototype.fromString = function(string) {
 Transaction.prototype._newTransaction = function() {
   this.version = CURRENT_VERSION;
   this.nLockTime = DEFAULT_NLOCKTIME;
+  this.fOverwintered = true;
+  this.nVersionGroupId = DEFAULT_VERSION_GROUP_ID;
+  this.nExpiryHeight = DEFAULT_EXPIRY_HEIGHT;
+  this.valueBalance = DEFAULT_VALUEBALANCE;
 };
 
 /* Transaction creation interface */
@@ -569,8 +683,8 @@ Transaction.prototype._newTransaction = function() {
  * Add an input to this transaction. This is a high level interface
  * to add an input, for more control, use @{link Transaction#addInput}.
  *
- * Can receive, as output information, the output of bitcoind's `listunspent` command,
- * and a slightly fancier format recognized by bitcore:
+ * Can receive, as output information, the output of litecoinzd's `listunspent` command,
+ * and a slightly fancier format recognized by ltzcore-lib:
  *
  * ```
  * {
@@ -581,8 +695,8 @@ Transaction.prototype._newTransaction = function() {
  *  satoshis: 1020000
  * }
  * ```
- * Where `address` can be either a string or a bitcore Address object. The
- * same is true for `script`, which can be a string or a bitcore Script.
+ * Where `address` can be either a string or a ltzcore-lib Address object. The
+ * same is true for `script`, which can be a string or a ltzcore-lib Script.
  *
  * Beware that this resets all the signatures for inputs (in further versions,
  * SIGHASH_SINGLE or SIGHASH_NONE signatures will not be reset).
@@ -591,7 +705,7 @@ Transaction.prototype._newTransaction = function() {
  * ```javascript
  * var transaction = new Transaction();
  *
- * // From a pay to public key hash output from bitcoind's listunspent
+ * // From a pay to public key hash output from litecoinzd's listunspent
  * transaction.from({'txid': '0000...', vout: 0, amount: 0.1, scriptPubKey: 'OP_DUP ...'});
  *
  * // From a pay to public key hash output
@@ -605,12 +719,11 @@ Transaction.prototype._newTransaction = function() {
  * @param {(Array.<Transaction~fromObject>|Transaction~fromObject)} utxo
  * @param {Array=} pubkeys
  * @param {number=} threshold
- * @param {boolean=} nestedWitness - Indicates that the utxo is nested witness p2sh
  * @param {Object=} opts - Several options:
  *        - noSorting: defaults to false, if true and is multisig, don't
  *                      sort the given public keys before creating the script
  */
-Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, opts) {
+Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
@@ -626,7 +739,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, o
     return this;
   }
   if (pubkeys && threshold) {
-    this._fromMultisigUtxo(utxo, pubkeys, threshold, nestedWitness, opts);
+    this._fromMultisigUtxo(utxo, pubkeys, threshold, opts);
   } else {
     this._fromNonP2SH(utxo);
   }
@@ -654,7 +767,7 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
   }));
 };
 
-Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nestedWitness, opts) {
+Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
   var clazz;
@@ -674,7 +787,7 @@ Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nes
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
     script: Script.empty()
-  }, pubkeys, threshold, false, nestedWitness, opts));
+  }, pubkeys, threshold, false, opts));
 };
 
 /**
@@ -1196,43 +1309,14 @@ Transaction.prototype.isValidSignature = function(signature) {
 /**
  * @returns {bool} whether the signature is valid for this transaction input
  */
-Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis) {
-
-  if (_.isUndefined(sigversion)) {
-    sigversion = 0;
-  }
-
-  if (sigversion === 1) {
-    var subscriptBuffer = subscript.toBuffer();
-    var scriptCodeWriter = new BufferWriter();
-    scriptCodeWriter.writeVarintNum(subscriptBuffer.length);
-    scriptCodeWriter.write(subscriptBuffer);
-
-    var satoshisBuffer;
-    if (satoshis) {
-      $.checkState(JSUtil.isNaturalNumber(satoshis));
-      satoshisBuffer = new BufferWriter().writeUInt64LEBN(new BN(satoshis)).toBuffer();
-    } else {
-      satoshisBuffer = this.inputs[nin].getSatoshisBuffer();
-    }
-    var verified = SighashWitness.verify(
-      this,
-      sig,
-      pubkey,
-      nin,
-      scriptCodeWriter.toBuffer(),
-      satoshisBuffer
-    );
-    return verified;
-  }
-
+Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, satoshis) {
   return Sighash.verify(this, sig, pubkey, nin, subscript);
 };
 
 /**
  * Check that a transaction passes basic sanity tests. If not, return a string
  * describing the error. This function contains the same logic as
- * CheckTransaction in bitcoin core.
+ * CheckTransaction in litecoinz core.
  */
 Transaction.prototype.verify = function() {
   // Basic checks that don't depend on any context
@@ -1295,7 +1379,7 @@ Transaction.prototype.verify = function() {
 };
 
 /**
- * Analogous to bitcoind's IsCoinBase function in transaction.h
+ * Analogous to litecoinzd's IsCoinBase function in transaction.h
  */
 Transaction.prototype.isCoinbase = function() {
   return (this.inputs.length === 1 && this.inputs[0].isNull());

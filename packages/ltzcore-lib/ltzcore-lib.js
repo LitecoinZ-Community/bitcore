@@ -16144,7 +16144,7 @@ module.exports={
   "_args": [
     [
       "elliptic@6.4.1",
-      "/Users/micah/dev/bitcore/packages/ltzcore-build"
+      "/home/litecoinz/ltzcore/packages/ltzcore-build"
     ]
   ],
   "_from": "elliptic@6.4.1",
@@ -16169,7 +16169,7 @@ module.exports={
   ],
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.1.tgz",
   "_spec": "6.4.1",
-  "_where": "/Users/micah/dev/bitcore/packages/ltzcore-build",
+  "_where": "/home/litecoinz/ltzcore/packages/ltzcore-build",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -17860,6 +17860,16 @@ var inherits = require('inherits');
 
 exports.inherits = inherits;
 
+function isSurrogatePair(msg, i) {
+  if ((msg.charCodeAt(i) & 0xFC00) !== 0xD800) {
+    return false;
+  }
+  if (i < 0 || i + 1 >= msg.length) {
+    return false;
+  }
+  return (msg.charCodeAt(i + 1) & 0xFC00) === 0xDC00;
+}
+
 function toArray(msg, enc) {
   if (Array.isArray(msg))
     return msg.slice();
@@ -17868,14 +17878,29 @@ function toArray(msg, enc) {
   var res = [];
   if (typeof msg === 'string') {
     if (!enc) {
+      // Inspired by stringToUtf8ByteArray() in closure-library by Google
+      // https://github.com/google/closure-library/blob/8598d87242af59aac233270742c8984e2b2bdbe0/closure/goog/crypt/crypt.js#L117-L143
+      // Apache License 2.0
+      // https://github.com/google/closure-library/blob/master/LICENSE
+      var p = 0;
       for (var i = 0; i < msg.length; i++) {
         var c = msg.charCodeAt(i);
-        var hi = c >> 8;
-        var lo = c & 0xff;
-        if (hi)
-          res.push(hi, lo);
-        else
-          res.push(lo);
+        if (c < 128) {
+          res[p++] = c;
+        } else if (c < 2048) {
+          res[p++] = (c >> 6) | 192;
+          res[p++] = (c & 63) | 128;
+        } else if (isSurrogatePair(msg, i)) {
+          c = 0x10000 + ((c & 0x03FF) << 10) + (msg.charCodeAt(++i) & 0x03FF);
+          res[p++] = (c >> 18) | 240;
+          res[p++] = ((c >> 12) & 63) | 128;
+          res[p++] = ((c >> 6) & 63) | 128;
+          res[p++] = (c & 63) | 128;
+        } else {
+          res[p++] = (c >> 12) | 224;
+          res[p++] = ((c >> 6) & 63) | 128;
+          res[p++] = (c & 63) | 128;
+        }
       }
     } else if (enc === 'hex') {
       msg = msg.replace(/[^a-z0-9]+/ig, '');
@@ -18841,7 +18866,8 @@ var AttributeTypeValue = asn.define('AttributeTypeValue', function () {
 var AlgorithmIdentifier = asn.define('AlgorithmIdentifier', function () {
   this.seq().obj(
     this.key('algorithm').objid(),
-    this.key('parameters').optional()
+    this.key('parameters').optional(),
+    this.key('curve').objid().optional()
   )
 })
 
@@ -18883,7 +18909,7 @@ var Extension = asn.define('Extension', function () {
 
 var TBSCertificate = asn.define('TBSCertificate', function () {
   this.seq().obj(
-    this.key('version').explicit(0).int(),
+    this.key('version').explicit(0).int().optional(),
     this.key('serialNumber').int(),
     this.key('signature').use(AlgorithmIdentifier),
     this.key('issuer').use(Name),
@@ -18941,12 +18967,12 @@ module.exports = function (okey, password) {
 
 }).call(this,require("buffer").Buffer)
 },{"browserify-aes":25,"buffer":52,"evp_bytestokey":88}],115:[function(require,module,exports){
-(function (Buffer){
 var asn1 = require('./asn1')
 var aesid = require('./aesid.json')
 var fixProc = require('./fixProc')
 var ciphers = require('browserify-aes')
 var compat = require('pbkdf2')
+var Buffer = require('safe-buffer').Buffer
 module.exports = parseKeys
 
 function parseKeys (buffer) {
@@ -18956,7 +18982,7 @@ function parseKeys (buffer) {
     buffer = buffer.key
   }
   if (typeof buffer === 'string') {
-    buffer = new Buffer(buffer)
+    buffer = Buffer.from(buffer)
   }
 
   var stripped = fixProc(buffer, password)
@@ -19041,7 +19067,7 @@ function decrypt (data, password) {
   var iv = data.algorithm.decrypt.cipher.iv
   var cipherText = data.subjectPrivateKey
   var keylen = parseInt(algo.split('-')[1], 10) / 8
-  var key = compat.pbkdf2Sync(password, salt, iters, keylen)
+  var key = compat.pbkdf2Sync(password, salt, iters, keylen, 'sha1')
   var cipher = ciphers.createDecipheriv(algo, key, iv)
   var out = []
   out.push(cipher.update(cipherText))
@@ -19049,8 +19075,7 @@ function decrypt (data, password) {
   return Buffer.concat(out)
 }
 
-}).call(this,require("buffer").Buffer)
-},{"./aesid.json":111,"./asn1":112,"./fixProc":114,"browserify-aes":25,"buffer":52,"pbkdf2":116}],116:[function(require,module,exports){
+},{"./aesid.json":111,"./asn1":112,"./fixProc":114,"browserify-aes":25,"pbkdf2":116,"safe-buffer":148}],116:[function(require,module,exports){
 exports.pbkdf2 = require('./lib/async')
 exports.pbkdf2Sync = require('./lib/sync')
 
@@ -25101,8 +25126,9 @@ Address._transformObject = function(data) {
 Address._classifyFromVersion = function(buffer) {
   var version = {};
 
-  var pubkeyhashNetwork = Networks.get(buffer[0], 'pubkeyhash');
-  var scripthashNetwork = Networks.get(buffer[0], 'scripthash');
+  var prefix = buffer[0]*256 + buffer[1];
+  var pubkeyhashNetwork = Networks.get(prefix, 'pubkeyhash');
+  var scripthashNetwork = Networks.get(prefix, 'scripthash');
 
   if (pubkeyhashNetwork) {
     version.network = pubkeyhashNetwork;
@@ -25116,7 +25142,7 @@ Address._classifyFromVersion = function(buffer) {
 };
 
 /**
- * Internal function to transform a bitcoin address buffer
+ * Internal function to transform a litecoinz address buffer
  *
  * @param {Buffer} buffer - An instance of a hex encoded address Buffer
  * @param {string=} network - The network: 'livenet' or 'testnet'
@@ -25130,8 +25156,8 @@ Address._transformBuffer = function(buffer, network, type) {
   if (!(buffer instanceof Buffer) && !(buffer instanceof Uint8Array)) {
     throw new TypeError('Address supplied is not a buffer.');
   }
-  if (buffer.length !== 1 + 20) {
-    throw new TypeError('Address buffers must be exactly 21 bytes.');
+  if (buffer.length !== 2 + 20) {
+    throw new TypeError('Address buffers must be exactly 22 bytes.');
   }
 
   var networkObj = Networks.get(network);
@@ -25149,7 +25175,7 @@ Address._transformBuffer = function(buffer, network, type) {
     throw new TypeError('Address has mismatched type.');
   }
 
-  info.hashBuffer = buffer.slice(1);
+  info.hashBuffer = buffer.slice(2);
   info.network = bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
@@ -25191,27 +25217,23 @@ Address._transformScript = function(script, network) {
 /**
  * Creates a P2SH address from a set of public keys and a threshold.
  *
- * The addresses will be sorted lexicographically, as that is the trend in bitcoin.
+ * The addresses will be sorted lexicographically, as that is the trend in litecoinz.
  * To create an address from unsorted public keys, use the {@link Script#buildMultisigOut}
  * interface.
  *
  * @param {Array} publicKeys - a set of public keys to create an address
  * @param {number} threshold - the number of signatures needed to release the funds
  * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
- * @param {boolean=} nestedWitness - if the address uses a nested p2sh witness
  * @return {Address}
  */
-Address.createMultisig = function(publicKeys, threshold, network, nestedWitness) {
+Address.createMultisig = function(publicKeys, threshold, network) {
   network = network || publicKeys[0].network || Networks.defaultNetwork;
   var redeemScript = Script.buildMultisigOut(publicKeys, threshold);
-  if (nestedWitness) {
-    return Address.payingTo(Script.buildWitnessMultisigOutFromScript(redeemScript), network);
-  }
   return Address.payingTo(redeemScript, network);
 };
 
 /**
- * Internal function to transform a bitcoin address string
+ * Internal function to transform a litecoinz address string
  *
  * @param {string} data
  * @param {String|Network=} network - either a Network instance, 'livenet', or 'testnet'
@@ -25317,7 +25339,7 @@ Address.fromBuffer = function(buffer, network, type) {
 /**
  * Instantiate an address from an address string
  *
- * @param {string} str - An string of the bitcoin address
+ * @param {string} str - An string of the litecoinz address
  * @param {String|Network=} network - either a Network instance, 'livenet', or 'testnet'
  * @param {string=} type - The type of address: 'script' or 'pubkey'
  * @returns {Address} A new valid and frozen instance of an Address
@@ -25403,11 +25425,13 @@ Address.prototype.isPayToScriptHash = function() {
 /**
  * Will return a buffer representation of the address
  *
- * @returns {Buffer} Bitcoin address buffer
+ * @returns {Buffer} LitecoinZ address buffer
  */
 Address.prototype.toBuffer = function() {
-  var version = Buffer.from([this.network[this.type]]);
-  return Buffer.concat([version, this.hashBuffer]);
+  var version = Buffer.alloc(2);
+  version.writeUInt16BE(this.network[this.type], 0);
+  var buf = Buffer.concat([version, this.hashBuffer]);
+  return buf;
 };
 
 /**
@@ -25424,7 +25448,7 @@ Address.prototype.toObject = Address.prototype.toJSON = function toObject() {
 /**
  * Will return a the string representation of the address
  *
- * @returns {string} Bitcoin address
+ * @returns {string} LitecoinZ address
  */
 Address.prototype.toString = function() {
   return Base58Check.encode(this.toBuffer());
@@ -25433,7 +25457,7 @@ Address.prototype.toString = function() {
 /**
  * Will return a string formatted for the console
  *
- * @returns {string} Bitcoin address
+ * @returns {string} LitecoinZ address
  */
 Address.prototype.inspect = function() {
   return '<Address: ' + this.toString() + ', type: ' + this.type + ', network: ' + this.network + '>';
@@ -25444,7 +25468,7 @@ module.exports = Address;
 var Script = require('./script');
 
 }).call(this,require("buffer").Buffer)
-},{"./crypto/hash":171,"./encoding/base58check":176,"./errors":180,"./networks":184,"./publickey":187,"./script":188,"./util/js":207,"./util/preconditions":208,"buffer":52,"lodash":245}],165:[function(require,module,exports){
+},{"./crypto/hash":171,"./encoding/base58check":176,"./errors":180,"./networks":184,"./publickey":187,"./script":188,"./util/js":209,"./util/preconditions":210,"buffer":52,"lodash":250}],165:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -25475,7 +25499,7 @@ function Block(arg) {
 }
 
 // https://github.com/bitcoin/bitcoin/blob/b5fa132329f0377d787a4a21c1686609c2bfaece/src/primitives/block.h#L14
-Block.MAX_BLOCK_SIZE = 1000000;
+Block.MAX_BLOCK_SIZE = 2000000;
 
 /**
  * @param {*} - A Buffer, JSON string or Object
@@ -25729,7 +25753,7 @@ Block.Values = {
 module.exports = Block;
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/bn":169,"../crypto/hash":171,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../transaction":191,"../util/buffer":206,"../util/preconditions":208,"./blockheader":166,"buffer":52,"lodash":245}],166:[function(require,module,exports){
+},{"../crypto/bn":169,"../crypto/hash":171,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../transaction":191,"../util/buffer":208,"../util/preconditions":210,"./blockheader":166,"buffer":52,"lodash":250}],166:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -25742,7 +25766,7 @@ var Hash = require('../crypto/hash');
 var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
 
-var GENESIS_BITS = 0x1d00ffff;
+var GENESIS_BITS = 0x1f07ffff;
 
 /**
  * Instantiate a BlockHeader from a Buffer, JSON object, or Object with
@@ -25760,10 +25784,12 @@ var BlockHeader = function BlockHeader(arg) {
   this.version = info.version;
   this.prevHash = info.prevHash;
   this.merkleRoot = info.merkleRoot;
+  this.reserved = info.reserved;
   this.time = info.time;
   this.timestamp = info.time;
   this.bits = info.bits;
   this.nonce = info.nonce;
+  this.solution = info.solution;
 
   if (info.hash) {
     $.checkState(
@@ -25802,21 +25828,37 @@ BlockHeader._fromObject = function _fromObject(data) {
   $.checkArgument(data, 'data is required');
   var prevHash = data.prevHash;
   var merkleRoot = data.merkleRoot;
+  var reserved = data.reserved;
+  var nonce = data.nonce;
+  var solution = data.solution;
+
   if (_.isString(data.prevHash)) {
     prevHash = BufferUtil.reverse(Buffer.from(data.prevHash, 'hex'));
   }
   if (_.isString(data.merkleRoot)) {
     merkleRoot = BufferUtil.reverse(Buffer.from(data.merkleRoot, 'hex'));
   }
+  if (_.isString(data.reserved)) {
+    reserved = BufferUtil.reverse(Buffer.from(data.reserved, 'hex'));
+  }
+  if (_.isString(data.nonce)) {
+    nonce = BufferUtil.reverse(Buffer.from(data.nonce, 'hex'));
+  }
+  if (_.isString(data.solution)) {
+    solution = Buffer.from(data.solution, 'hex');
+  }
+
   var info = {
     hash: data.hash,
     version: data.version,
     prevHash: prevHash,
     merkleRoot: merkleRoot,
+    reserved: reserved,
     time: data.time,
     timestamp: data.time,
     bits: data.bits,
-    nonce: data.nonce
+    nonce: nonce,
+    solution: solution
   };
   return info;
 };
@@ -25872,9 +25914,12 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
   info.version = br.readInt32LE();
   info.prevHash = br.read(32);
   info.merkleRoot = br.read(32);
+  info.reserved = br.read(32);
   info.time = br.readUInt32LE();
   info.bits = br.readUInt32LE();
-  info.nonce = br.readUInt32LE();
+  info.nonce = br.read(32);
+  var lenSolution = br.readVarintNum();
+  info.solution = br.read(lenSolution);
   return info;
 };
 
@@ -25896,9 +25941,11 @@ BlockHeader.prototype.toObject = BlockHeader.prototype.toJSON = function toObjec
     version: this.version,
     prevHash: BufferUtil.reverse(this.prevHash).toString('hex'),
     merkleRoot: BufferUtil.reverse(this.merkleRoot).toString('hex'),
+    reserved: BufferUtil.reverse(this.reserved).toString('hex'),
     time: this.time,
     bits: this.bits,
-    nonce: this.nonce
+    nonce: BufferUtil.reverse(this.nonce).toString('hex'),
+    solution: this.solution.toString('hex')
   };
 };
 
@@ -25927,9 +25974,12 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
   bw.writeInt32LE(this.version);
   bw.write(this.prevHash);
   bw.write(this.merkleRoot);
+  bw.write(this.reserved);
   bw.writeUInt32LE(this.time);
   bw.writeUInt32LE(this.bits);
-  bw.writeUInt32LE(this.nonce);
+  bw.write(this.nonce);
+  bw.writeVarintNum(this.solution.length);
+  bw.write(this.solution);
   return bw;
 };
 
@@ -26029,7 +26079,7 @@ BlockHeader.Constants = {
 module.exports = BlockHeader;
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/bn":169,"../crypto/hash":171,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../util/buffer":206,"../util/js":207,"../util/preconditions":208,"buffer":52,"lodash":245}],167:[function(require,module,exports){
+},{"../crypto/bn":169,"../crypto/hash":171,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"buffer":52,"lodash":250}],167:[function(require,module,exports){
 module.exports = require('./block');
 
 module.exports.BlockHeader = require('./blockheader');
@@ -26224,7 +26274,7 @@ MerkleBlock.prototype.filterdTxsHash = function filterdTxsHash() {
 
 /**
  * Traverse a the tree in this MerkleBlock, validating it along the way
- * Modeled after Bitcoin Core merkleblock.cpp TraverseAndExtract()
+ * Modeled after LitecoinZ Core merkleblock.cpp TraverseAndExtract()
  * @param {Number} - depth - Current height
  * @param {Number} - pos - Current position in the tree
  * @param {Object} - opts - Object with values that need to be mutated throughout the traversal
@@ -26274,7 +26324,7 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
 };
 
 /** Calculates the width of a merkle tree at a given height.
- *  Modeled after Bitcoin Core merkleblock.h CalcTreeWidth()
+ *  Modeled after LitecoinZ Core merkleblock.h CalcTreeWidth()
  * @param {Number} - Height at which we want the tree width
  * @returns {Number} - Width of the tree at a given height
  * @private
@@ -26352,7 +26402,7 @@ MerkleBlock.fromObject = function fromObject(obj) {
 module.exports = MerkleBlock;
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/hash":171,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../errors":180,"../transaction":191,"../util/buffer":206,"../util/js":207,"../util/preconditions":208,"./blockheader":166,"buffer":52,"lodash":245}],169:[function(require,module,exports){
+},{"../crypto/hash":171,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../errors":180,"../transaction":191,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"./blockheader":166,"buffer":52,"lodash":250}],169:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -26484,8 +26534,8 @@ BN.prototype.toSM = function(opts) {
 
 /**
  * Create a BN from a "ScriptNum":
- * This is analogous to the constructor for CScriptNum in bitcoind. Many ops in
- * bitcoind's script interpreter use CScriptNum, which is not really a proper
+ * This is analogous to the constructor for CScriptNum in litecoinzd. Many ops in
+ * litecoinzd's script interpreter use CScriptNum, which is not really a proper
  * bignum. Instead, an error is thrown if trying to input a number bigger than
  * 4 bytes. We copy that behavior here. A third argument, `size`, is provided to
  * extend the hard limit of 4 bytes, as some usages require more than 4 bytes.
@@ -26546,7 +26596,7 @@ BN.pad = function(buf, natlen, size) {
 module.exports = BN;
 
 }).call(this,require("buffer").Buffer)
-},{"../util/preconditions":208,"bn.js":210,"buffer":52,"lodash":245}],170:[function(require,module,exports){
+},{"../util/preconditions":210,"bn.js":215,"buffer":52,"lodash":250}],170:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -26846,7 +26896,7 @@ ECDSA.verify = function(hashbuf, sig, pubkey, endian) {
 module.exports = ECDSA;
 
 }).call(this,require("buffer").Buffer)
-},{"../publickey":187,"../util/buffer":206,"../util/preconditions":208,"./bn":169,"./hash":171,"./point":172,"./random":173,"./signature":174,"buffer":52,"lodash":245}],171:[function(require,module,exports){
+},{"../publickey":187,"../util/buffer":208,"../util/preconditions":210,"./bn":169,"./hash":171,"./point":172,"./random":173,"./signature":174,"buffer":52,"lodash":250}],171:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -26935,7 +26985,7 @@ Hash.sha512hmac = function(data, key) {
 };
 
 }).call(this,require("buffer").Buffer)
-},{"../util/buffer":206,"../util/preconditions":208,"buffer":52,"crypto":60}],172:[function(require,module,exports){
+},{"../util/buffer":208,"../util/preconditions":210,"buffer":52,"crypto":60}],172:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -27012,7 +27062,8 @@ Point.getN = function getN() {
   return new BN(ec.curve.n.toArray());
 };
 
-Point.prototype._getX = Point.prototype.getX;
+if (!Point.prototype._getX)
+  Point.prototype._getX = Point.prototype.getX;
 
 /**
  *
@@ -27024,7 +27075,8 @@ Point.prototype.getX = function getX() {
   return new BN(this._getX().toArray());
 };
 
-Point.prototype._getY = Point.prototype.getY;
+if (!Point.prototype._getY)
+  Point.prototype._getY = Point.prototype.getY;
 
 /**
  *
@@ -27089,7 +27141,7 @@ Point.pointToCompressed = function pointToCompressed(point) {
 module.exports = Point;
 
 }).call(this,require("buffer").Buffer)
-},{"../util/buffer":206,"./bn":169,"buffer":52,"elliptic":214}],173:[function(require,module,exports){
+},{"../util/buffer":208,"./bn":169,"buffer":52,"elliptic":219}],173:[function(require,module,exports){
 (function (process,Buffer){
 'use strict';
 
@@ -27346,7 +27398,7 @@ Signature.prototype.toString = function() {
 };
 
 /**
- * This function is translated from bitcoind's IsDERSignature and is used in
+ * This function is translated from litecoinzd's IsDERSignature and is used in
  * the script interpreter.  This "DER" format actually includes an extra byte,
  * the nhashtype, at the end. It is really the tx format, not DER format.
  *
@@ -27424,7 +27476,7 @@ Signature.isTxDER = function(buf) {
 };
 
 /**
- * Compares to bitcoind's IsLowDERSignature
+ * Compares to litecoinzd's IsLowDERSignature
  * See also ECDSA signature algorithm which enforces this.
  * See also BIP 62, "low S values in signatures"
  */
@@ -27438,7 +27490,7 @@ Signature.prototype.hasLowS = function() {
 
 /**
  * @returns true if the nhashtype is exactly equal to one of the standard options or combinations thereof.
- * Translated from bitcoind's IsDefinedHashtypeSignature
+ * Translated from litecoinzd's IsDefinedHashtypeSignature
  */
 Signature.prototype.hasDefinedHashtype = function() {
   if (!JSUtil.isNaturalNumber(this.nhashtype)) {
@@ -27467,7 +27519,7 @@ Signature.SIGHASH_ANYONECANPAY = 0x80;
 module.exports = Signature;
 
 }).call(this,require("buffer").Buffer)
-},{"../util/buffer":206,"../util/js":207,"../util/preconditions":208,"./bn":169,"buffer":52,"lodash":245}],175:[function(require,module,exports){
+},{"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"./bn":169,"buffer":52,"lodash":250}],175:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -27541,7 +27593,7 @@ Base58.prototype.toString = function() {
 module.exports = Base58;
 
 }).call(this,require("buffer").Buffer)
-},{"bs58":212,"buffer":52,"lodash":245}],176:[function(require,module,exports){
+},{"bs58":217,"buffer":52,"lodash":250}],176:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -27640,7 +27692,7 @@ Base58Check.prototype.toString = function() {
 module.exports = Base58Check;
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/hash":171,"./base58":175,"buffer":52,"lodash":245}],177:[function(require,module,exports){
+},{"../crypto/hash":171,"./base58":175,"buffer":52,"lodash":250}],177:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -27734,6 +27786,12 @@ BufferReader.prototype.readUInt32LE = function() {
 BufferReader.prototype.readInt32LE = function() {
   var val = this.buf.readInt32LE(this.pos);
   this.pos = this.pos + 4;
+  return val;
+};
+
+BufferReader.prototype.readUInt64LE = function() {
+  var val = this.buf.readUInt32LE(this.pos) + this.buf.readUInt32LE(this.pos + 4) * 0x100000000
+  this.pos = this.pos + 8;
   return val;
 };
 
@@ -27846,7 +27904,7 @@ BufferReader.prototype.readReverse = function(len) {
 module.exports = BufferReader;
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/bn":169,"../util/buffer":206,"../util/preconditions":208,"buffer":52,"lodash":245}],178:[function(require,module,exports){
+},{"../crypto/bn":169,"../util/buffer":208,"../util/preconditions":210,"buffer":52,"lodash":250}],178:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -27933,6 +27991,14 @@ BufferWriter.prototype.writeUInt32LE = function(n) {
   return this;
 };
 
+BufferWriter.prototype.writeUInt64LE = function(n) {
+  var buf = Buffer.alloc(8);
+  buf.writeInt32LE(n & -1, 0);
+  buf.writeUInt32LE(Math.floor(n / 0x100000000), 4);
+  this.write(buf);
+  return this;
+};
+
 BufferWriter.prototype.writeUInt64BEBN = function(bn) {
   var buf = bn.toBuffer({size: 8});
   this.write(buf);
@@ -28005,7 +28071,7 @@ BufferWriter.varintBufBN = function(bn) {
 module.exports = BufferWriter;
 
 }).call(this,require("buffer").Buffer)
-},{"../util/buffer":206,"assert":15,"buffer":52}],179:[function(require,module,exports){
+},{"../util/buffer":208,"assert":15,"buffer":52}],179:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -28144,7 +28210,7 @@ module.exports.extend = function(spec) {
   return traverseNode(bitcore.Error, spec);
 };
 
-},{"./spec":181,"lodash":245}],181:[function(require,module,exports){
+},{"./spec":181,"lodash":250}],181:[function(require,module,exports){
 'use strict';
 
 var docsURL = 'http://bitcore.io/';
@@ -28980,7 +29046,7 @@ assert(HDPrivateKey.ChecksumEnd === HDPrivateKey.SerializedByteSize);
 module.exports = HDPrivateKey;
 
 }).call(this,require("buffer").Buffer)
-},{"./crypto/bn":169,"./crypto/hash":171,"./crypto/point":172,"./crypto/random":173,"./encoding/base58":175,"./encoding/base58check":176,"./errors":180,"./hdpublickey":183,"./networks":184,"./privatekey":186,"./util/buffer":206,"./util/js":207,"./util/preconditions":208,"assert":15,"buffer":52,"lodash":245}],183:[function(require,module,exports){
+},{"./crypto/bn":169,"./crypto/hash":171,"./crypto/point":172,"./crypto/random":173,"./encoding/base58":175,"./encoding/base58check":176,"./errors":180,"./hdpublickey":183,"./networks":184,"./privatekey":186,"./util/buffer":208,"./util/js":209,"./util/preconditions":210,"assert":15,"buffer":52,"lodash":250}],183:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -29480,7 +29546,7 @@ assert(HDPublicKey.ChecksumEnd === HDPublicKey.SerializedByteSize);
 module.exports = HDPublicKey;
 
 }).call(this,require("buffer").Buffer)
-},{"./crypto/bn":169,"./crypto/hash":171,"./crypto/point":172,"./encoding/base58":175,"./encoding/base58check":176,"./errors":180,"./hdprivatekey":182,"./networks":184,"./publickey":187,"./util/buffer":206,"./util/js":207,"./util/preconditions":208,"assert":15,"buffer":52,"lodash":245}],184:[function(require,module,exports){
+},{"./crypto/bn":169,"./crypto/hash":171,"./crypto/point":172,"./encoding/base58":175,"./encoding/base58check":176,"./errors":180,"./hdprivatekey":182,"./networks":184,"./publickey":187,"./util/buffer":208,"./util/js":209,"./util/preconditions":210,"assert":15,"buffer":52,"lodash":250}],184:[function(require,module,exports){
 'use strict';
 var _ = require('lodash');
 
@@ -29491,7 +29557,7 @@ var networkMaps = {};
 
 /**
  * A network is merely a map containing values that correspond to version
- * numbers for each bitcoin network. Currently only supporting "livenet"
+ * numbers for each litecoinz network. Currently only supporting "livenet"
  * (a.k.a. "mainnet") and "testnet".
  * @constructor
  */
@@ -29546,6 +29612,8 @@ function get(arg, keys) {
  * @param {Number} data.scripthash - The scripthash prefix
  * @param {Number} data.xpubkey - The extended public key magic
  * @param {Number} data.xprivkey - The extended private key magic
+ * @param {Number} data.zaddr - The Zcash payment address prefix
+ * @param {Number} data.zkey - The Zcash spending key prefix
  * @param {Number} data.networkMagic - The network magic number
  * @param {Number} data.port - The network port
  * @param {Array}  data.dnsSeeds - An array of dns seeds
@@ -29562,7 +29630,9 @@ function addNetwork(data) {
     privatekey: data.privatekey,
     scripthash: data.scripthash,
     xpubkey: data.xpubkey,
-    xprivkey: data.xprivkey
+    xprivkey: data.xprivkey,
+    zaddr: data.zaddr,
+    zkey: data.zkey
   });
 
   if (data.networkMagic) {
@@ -29620,20 +29690,17 @@ function removeNetwork(network) {
 addNetwork({
   name: 'livenet',
   alias: 'mainnet',
-  pubkeyhash: 0x00,
+  pubkeyhash: 0x0ab3,
   privatekey: 0x80,
-  scripthash: 0x05,
+  scripthash: 0x0ab8,
   xpubkey: 0x0488b21e,
   xprivkey: 0x0488ade4,
-  networkMagic: 0xf9beb4d9,
-  port: 8333,
+  zaddr: 0x16aa,
+  zkey: 0x8964,
+  networkMagic: 0xd8cfcd93,
+  port: 29333,
   dnsSeeds: [
-    'seed.bitcoin.sipa.be',
-    'dnsseed.bluematt.me',
-    'dnsseed.bitcoin.dashjr.org',
-    'seed.bitcoinstats.com',
-    'seed.bitnodes.io',
-    'bitseed.xf2.org'
+    'dnsseed.litecoinz.org'
   ]
 });
 
@@ -29646,18 +29713,17 @@ var livenet = get('livenet');
 addNetwork({
   name: 'testnet',
   alias: 'test',
-  pubkeyhash: 0x6f,
+  pubkeyhash: 0x0ea4,
   privatekey: 0xef,
-  scripthash: 0xc4,
+  scripthash: 0x0ea9,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0x0b110907,
-  port: 18333,
+  zaddr: 0x16b6,
+  zkey: 0xb1f8,
+  networkMagic: 0xfe90865d,
+  port: 39333,
   dnsSeeds: [
-    'testnet-seed.bitcoin.petertodd.org',
-    'testnet-seed.bluematt.me',
-    'testnet-seed.alexykot.me',
-    'testnet-seed.bitcoin.schildbach.de'
+    'testnet-dnsseed.litecoinz.org'
   ]
 });
 
@@ -29670,13 +29736,15 @@ var testnet = get('testnet');
 addNetwork({
   name: 'regtest',
   alias: 'dev',
-  pubkeyhash: 0x6f,
+  pubkeyhash: 0x0ea4,
   privatekey: 0xef,
-  scripthash: 0xc4,
+  scripthash: 0x0ea9,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0xfabfb5da,
-  port: 18444,
+  zaddr: 0x16b6,
+  zkey: 0xb1f8,
+  networkMagic: 0xea8c7119,
+  port: 49444,
   dnsSeeds: []
 });
 
@@ -29722,7 +29790,7 @@ module.exports = {
   disableRegtest: disableRegtest
 };
 
-},{"./util/buffer":206,"./util/js":207,"lodash":245}],185:[function(require,module,exports){
+},{"./util/buffer":208,"./util/js":209,"lodash":250}],185:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -29975,7 +30043,7 @@ Opcode.prototype.inspect = function() {
 module.exports = Opcode;
 
 }).call(this,require("buffer").Buffer)
-},{"./util/buffer":206,"./util/js":207,"./util/preconditions":208,"buffer":52,"lodash":245}],186:[function(require,module,exports){
+},{"./util/buffer":208,"./util/js":209,"./util/preconditions":210,"buffer":52,"lodash":250}],186:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -30379,7 +30447,7 @@ PrivateKey.prototype.inspect = function() {
 module.exports = PrivateKey;
 
 }).call(this,require("buffer").Buffer)
-},{"./address":164,"./crypto/bn":169,"./crypto/point":172,"./crypto/random":173,"./encoding/base58check":176,"./networks":184,"./publickey":187,"./util/js":207,"./util/preconditions":208,"buffer":52,"lodash":245}],187:[function(require,module,exports){
+},{"./address":164,"./crypto/bn":169,"./crypto/point":172,"./crypto/random":173,"./encoding/base58check":176,"./networks":184,"./publickey":187,"./util/js":209,"./util/preconditions":210,"buffer":52,"lodash":250}],187:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -30776,7 +30844,7 @@ PublicKey.prototype.inspect = function() {
 module.exports = PublicKey;
 
 }).call(this,require("buffer").Buffer)
-},{"./address":164,"./crypto/bn":169,"./crypto/hash":171,"./crypto/point":172,"./networks":184,"./privatekey":186,"./util/js":207,"./util/preconditions":208,"buffer":52,"lodash":245}],188:[function(require,module,exports){
+},{"./address":164,"./crypto/bn":169,"./crypto/hash":171,"./crypto/point":172,"./networks":184,"./privatekey":186,"./util/js":209,"./util/preconditions":210,"buffer":52,"lodash":250}],188:[function(require,module,exports){
 module.exports = require('./script');
 
 module.exports.Interpreter = require('./interpreter');
@@ -30795,7 +30863,7 @@ var Signature = require('../crypto/signature');
 var PublicKey = require('../publickey');
 
 /**
- * Bitcoin transactions contain scripts. Each input has a script called the
+ * LitecoinZ transactions contain scripts. Each input has a script called the
  * scriptSig, and each output has a script called the scriptPubkey. To validate
  * an input, the input's script is concatenated with the referenced output script,
  * and the result is executed. If at the end of execution the stack contains a
@@ -30816,82 +30884,6 @@ var Interpreter = function Interpreter(obj) {
   }
 };
 
-Interpreter.prototype.verifyWitnessProgram = function(version, program, witness, satoshis, flags) {
-
-  var scriptPubKey = new Script();
-  var stack = [];
-
-  if (version === 0) {
-    if (program.length === 32) {
-      if (witness.length === 0) {
-        this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_WITNESS_EMPTY';
-        return false;
-      }
-
-      var scriptPubKeyBuffer = witness[witness.length - 1];
-      scriptPubKey = new Script(scriptPubKeyBuffer);
-      var hash = Hash.sha256(scriptPubKeyBuffer);
-      if (hash.toString('hex') !== program.toString('hex')) {
-        this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH';
-        return false;
-      }
-
-      stack = witness.slice(0, -1);
-    } else if (program.length === 20) {
-      if (witness.length !== 2) {
-        this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_MISMATCH';
-        return false;
-      }
-
-      scriptPubKey.add(Opcode.OP_DUP);
-      scriptPubKey.add(Opcode.OP_HASH160);
-      scriptPubKey.add(program);
-      scriptPubKey.add(Opcode.OP_EQUALVERIFY);
-      scriptPubKey.add(Opcode.OP_CHECKSIG);
-
-      stack = witness;
-
-    } else {
-      this.errstr = 'SCRIPT_ERR_WITNESS_PROGRAM_WRONG_LENGTH';
-      return false;
-    }
-  } else if ((flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM)) {
-    this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM';
-    return false;
-  } else {
-    return true;
-  }
-
-  this.initialize();
-
-  this.set({
-    script: scriptPubKey,
-    stack: stack,
-    sigversion: 1,
-    satoshis: satoshis,
-    flags: flags,
-  });
-
-  if (!this.evaluate()) {
-    return false;
-  }
-
-  if (this.stack.length !== 1) {
-    this.errstr = 'SCRIPT_ERR_EVAL_FALSE';
-    return false;
-  }
-
-  var buf = this.stack[this.stack.length - 1];
-  if (!Interpreter.castToBool(buf)) {
-    this.errstr = 'SCRIPT_ERR_EVAL_FALSE_IN_STACK';
-    return false;
-  }
-
-  return true;
-};
-
-
-
 /**
  * Verifies a Script by executing it and returns true if it is valid.
  * This function needs to be provided with the scriptSig and the scriptPubkey
@@ -30902,12 +30894,11 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
  *    to check signature validity for some opcodes like OP_CHECKSIG)
  * @param {number} nin - index of the transaction input containing the scriptSig verified.
  * @param {number} flags - evaluation flags. See Interpreter.SCRIPT_* constants
- * @param {number} witness - array of witness data
  * @param {number} satoshis - number of satoshis created by this output
  *
- * Translated from bitcoind's VerifyScript
+ * Translated from litecoinzd's VerifyScript
  */
-Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags, witness, satoshis) {
+Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags, satoshis) {
 
   var Transaction = require('../transaction');
   if (_.isUndefined(tx)) {
@@ -30919,9 +30910,6 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
   if (_.isUndefined(flags)) {
     flags = 0;
   }
-  if (_.isUndefined(witness)) {
-    witness = null;
-  }
   if (_.isUndefined(satoshis)) {
     satoshis = 0;
   }
@@ -30930,7 +30918,6 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     script: scriptSig,
     tx: tx,
     nin: nin,
-    sigversion: 0,
     satoshis: 0,
     flags: flags
   });
@@ -30976,20 +30963,6 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     return false;
   }
 
-  var hadWitness = false;
-  if ((flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
-    var witnessValues = {};
-    if (scriptPubkey.isWitnessProgram(witnessValues)) {
-      hadWitness = true;
-      if (scriptSig.toBuffer().length !== 0) {
-        return false;
-      }
-      if (!this.verifyWitnessProgram(witnessValues.version, witnessValues.program, witness, satoshis, this.flags)) {
-        return false;
-      }
-    }
-  }
-
   // Additional validation for spend-to-script-hash transactions:
   if ((flags & Interpreter.SCRIPT_VERIFY_P2SH) && scriptPubkey.isScriptHashOut()) {
     // scriptSig must be literals-only or validation fails
@@ -31032,31 +31005,11 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
       this.errstr = 'SCRIPT_ERR_EVAL_FALSE_IN_P2SH_STACK';
       return false;
     }
-    if ((flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
-      var p2shWitnessValues = {};
-      if (redeemScript.isWitnessProgram(p2shWitnessValues)) {
-        hadWitness = true;
-        var redeemScriptPush = new Script();
-        redeemScriptPush.add(redeemScript.toBuffer());
-        if (scriptSig.toHex() !== redeemScriptPush.toHex()) {
-          this.errstr = 'SCRIPT_ERR_WITNESS_MALLEATED_P2SH';
-          return false;
-        }
-
-        if (!this.verifyWitnessProgram(p2shWitnessValues.version, p2shWitnessValues.program, witness, satoshis, this.flags)) {
-          return false;
-        }
-        // Bypass the cleanstack check at the end. The actual stack is obviously not clean
-        // for witness programs.
-        stack = [stack[0]];
-      }
-    }
   }
 
   // The CLEANSTACK check is only performed after potential P2SH evaluation,
   // as the non-P2SH evaluation of a P2SH script will obviously not result in
-  // a clean stack (the P2SH inputs remain). The same holds for witness
-  // evaluation.
+  // a clean stack (the P2SH inputs remain).
   if ((this.flags & Interpreter.SCRIPT_VERIFY_CLEANSTACK) != 0) {
       // Disallow CLEANSTACK without P2SH, as otherwise a switch
       // CLEANSTACK->P2SH+CLEANSTACK would be possible, which is not a
@@ -31070,13 +31023,6 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
       }
   }
 
-  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
-    if (!hadWitness && witness.length > 0) {
-      this.errstr = 'SCRIPT_ERR_WITNESS_UNEXPECTED';
-      return false;
-    }
-  }
-
   return true;
 };
 
@@ -31087,7 +31033,6 @@ Interpreter.prototype.initialize = function(obj) {
   this.altstack = [];
   this.pc = 0;
   this.satoshis = 0;
-  this.sigversion = 0;
   this.pbegincodehash = 0;
   this.nOpCount = 0;
   this.vfExec = [];
@@ -31103,7 +31048,6 @@ Interpreter.prototype.set = function(obj) {
   this.altstack = obj.altack || this.altstack;
   this.pc = typeof obj.pc !== 'undefined' ? obj.pc : this.pc;
   this.pbegincodehash = typeof obj.pbegincodehash !== 'undefined' ? obj.pbegincodehash : this.pbegincodehash;
-  this.sigversion = typeof obj.sigversion !== 'undefined' ? obj.sigversion : this.sigversion;
   this.satoshis = typeof obj.satoshis !== 'undefined' ? obj.satoshis : this.satoshis;
   this.nOpCount = typeof obj.nOpCount !== 'undefined' ? obj.nOpCount : this.nOpCount;
   this.vfExec = obj.vfExec || this.vfExec;
@@ -31119,12 +31063,9 @@ Interpreter.MAX_SCRIPT_ELEMENT_SIZE = 520;
 Interpreter.LOCKTIME_THRESHOLD = 500000000;
 Interpreter.LOCKTIME_THRESHOLD_BN = new BN(Interpreter.LOCKTIME_THRESHOLD);
 
-// flags taken from bitcoind
+// flags taken from litecoinzd
 // bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
 Interpreter.SCRIPT_VERIFY_NONE = 0;
-
-// Making v1-v16 witness program non-standard
-Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_WITNESS_PROGRAM = (1 << 12);
 
 // Evaluate P2SH subscripts (softfork safe, BIP16).
 Interpreter.SCRIPT_VERIFY_P2SH = (1 << 0);
@@ -31171,68 +31112,12 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // one stack element must remain, and when interpreted as a boolean, it must
 // be true".
 // (softfork safe, BIP62 rule 6)
-// Note: CLEANSTACK should never be used without P2SH or WITNESS.
+// Note: CLEANSTACK should never be used without P2SH.
 Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
 
 // CLTV See BIP65 for details.
 Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9);
-Interpreter.SCRIPT_VERIFY_WITNESS = (1 << 10);
 Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 11);
-
-// support CHECKSEQUENCEVERIFY opcode
-//
-// See BIP112 for details
-Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY = (1 << 10);
-
-//
-// Segwit script only: Require the argument of OP_IF/NOTIF to be exactly
-// 0x01 or empty vector
-//
-Interpreter.SCRIPT_VERIFY_MINIMALIF = (1 << 13);
-
-
-// Signature(s) must be empty vector if an CHECK(MULTI)SIG operation failed
-//
-Interpreter.SCRIPT_VERIFY_NULLFAIL = (1 << 14);
-
-// Public keys in scripts must be compressed
-//
-Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE = (1 << 15);
-
-// Do we accept signature using SIGHASH_FORKID
-//
-Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID = (1 << 16);
-
-// Do we accept activate replay protection using a different fork id.
-//
-Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION = (1 << 17);
-
-// Enable new opcodes.
-//
-Interpreter.SCRIPT_ENABLE_MONOLITH_OPCODES = (1 << 18);
-
-
-
-/* Below flags apply in the context of BIP 68*/
-/**
- * If this flag set, CTxIn::nSequence is NOT interpreted as a relative
- * lock-time.
- */
-Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG = (1 << 31);
-
-/**
- * If CTxIn::nSequence encodes a relative lock-time and this flag is set,
- * the relative lock-time has units of 512 seconds, otherwise it specifies
- * blocks with a granularity of 1.
- */
-Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG = (1 << 22);
-
-/**
- * If CTxIn::nSequence encodes a relative lock-time, this mask is applied to
- * extract that lock-time from the sequence field.
- */
-Interpreter.SEQUENCE_LOCKTIME_MASK = 0x0000ffff;
-
 
 Interpreter.castToBool = function(buf) {
   for (var i = 0; i < buf.length; i++) {
@@ -31248,28 +31133,20 @@ Interpreter.castToBool = function(buf) {
 };
 
 /**
- * Translated from bitcoind's CheckSignatureEncoding
+ * Translated from litecoinzd's CheckSignatureEncoding
  */
 Interpreter.prototype.checkSignatureEncoding = function(buf) {
-  var sig;
-
-    // Empty signature. Not strictly DER encoded, but allowed to provide a
-    // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
-    if (buf.length == 0) {
-        return true;
-    }
-
   if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isTxDER(buf)) {
     this.errstr = 'SCRIPT_ERR_SIG_DER_INVALID_FORMAT';
     return false;
   } else if ((this.flags & Interpreter.SCRIPT_VERIFY_LOW_S) !== 0) {
-    sig = Signature.fromTxFormat(buf);
+    var sig = Signature.fromTxFormat(buf);
     if (!sig.hasLowS()) {
       this.errstr = 'SCRIPT_ERR_SIG_DER_HIGH_S';
       return false;
     }
   } else if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0) {
-    sig = Signature.fromTxFormat(buf);
+    var sig = Signature.fromTxFormat(buf);
     if (!sig.hasDefinedHashtype()) {
       this.errstr = 'SCRIPT_ERR_SIG_HASHTYPE';
       return false;
@@ -31280,7 +31157,7 @@ Interpreter.prototype.checkSignatureEncoding = function(buf) {
 };
 
 /**
- * Translated from bitcoind's CheckPubKeyEncoding
+ * Translated from litecoinzd's CheckPubKeyEncoding
  */
 Interpreter.prototype.checkPubkeyEncoding = function(buf) {
   if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0 && !PublicKey.isValid(buf)) {
@@ -31288,17 +31165,11 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
     return false;
   }
 
-  // Only compressed keys are accepted in segwit
-  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == 1 && !PublicKey.fromBuffer(buf).compressed) {
-    this.errstr = 'SCRIPT_ERR_WITNESS_PUBKEYTYPE';
-    return false;
-  }
-
   return true;
 };
 
 /**
- * Based on bitcoind's EvalScript function, with the inner loop moved to
+ * Based on litecoinzd's EvalScript function, with the inner loop moved to
  * Interpreter.prototype.step()
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
@@ -31339,7 +31210,7 @@ Interpreter.prototype.evaluate = function() {
  * There are two times of nLockTime: lock-by-blockheight and lock-by-blocktime,
  * distinguished by whether nLockTime < LOCKTIME_THRESHOLD = 500000000
  *
- * See the corresponding code on bitcoin core:
+ * See the corresponding code on litecoinz core:
  * https://github.com/bitcoin/bitcoin/blob/ffd75adce01a78b3461b3ff05bcc2b530a9ce994/src/script/interpreter.cpp#L1129
  *
  * @param {BN} nLockTime the locktime read from the script
@@ -31381,66 +31252,8 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
   return true;
 }
 
-
 /**
- * Checks a sequence parameter with the transaction's sequence.
- * @param {BN} nSequence the sequence read from the script
- * @return {boolean} true if the transaction's sequence is less than or equal to
- *                   the transaction's sequence 
- */
-Interpreter.prototype.checkSequence = function(nSequence) {
-
-    // Relative lock times are supported by comparing the passed in operand to
-    // the sequence number of the input.
-    var txToSequence = this.tx.inputs[this.nin].sequenceNumber;
-
-    // Fail if the transaction's version number is not set high enough to
-    // trigger BIP 68 rules.
-    if (this.tx.version < 2) {
-        return false;
-    }
-
-    // Sequence numbers with their most significant bit set are not consensus
-    // constrained. Testing that the transaction's sequence number do not have
-    // this bit set prevents using this property to get around a
-    // CHECKSEQUENCEVERIFY check.
-    if (txToSequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
-        return false;
-    }
-
-    // Mask off any bits that do not have consensus-enforced meaning before
-    // doing the integer comparisons
-    var nLockTimeMask =
-        Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
-    var txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
-    var nSequenceMasked = nSequence.and(nLockTimeMask);
-
-    // There are two kinds of nSequence: lock-by-blockheight and
-    // lock-by-blocktime, distinguished by whether nSequenceMasked <
-    // CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG.
-    //
-    // We want to compare apples to apples, so fail the script unless the type
-    // of nSequenceMasked being tested is the same as the nSequenceMasked in the
-    // transaction.
-    var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
-    
-    if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
-           nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
-          (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
-           nSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)))) {
-        return false;
-    }
-
-    // Now that we know we're comparing apples-to-apples, the comparison is a
-    // simple numeric one.
-    if (nSequenceMasked.gt(txToSequenceMasked)) {
-        return false;
-    }
-    return true;
-  }
-
-/** 
- * Based on the inner loop of bitcoind's EvalScript function
+ * Based on the inner loop of litecoinzd's EvalScript function
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
 Interpreter.prototype.step = function() {
@@ -31589,57 +31402,8 @@ Interpreter.prototype.step = function() {
         }
         break;
 
-      case Opcode.OP_NOP3:
-      case Opcode.OP_CHECKSEQUENCEVERIFY:
-
-        if (!(this.flags & Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)) {
-          // not enabled; treat as a NOP3
-          if (this.flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
-            this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS';
-            return false;
-          }
-          break;
-        }
-
-        if (this.stack.length < 1) {
-          this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
-          return false;
-        }
-
-
-        // nSequence, like nLockTime, is a 32-bit unsigned
-        // integer field. See the comment in CHECKLOCKTIMEVERIFY
-        // regarding 5-byte numeric operands.
-
-        var nSequence = BN.fromScriptNumBuffer(this.stack[this.stack.length - 1], fRequireMinimal, 5);
-
-
-        // In the rare event that the argument may be < 0 due to
-        // some arithmetic being done first, you can always use
-        // 0 MAX CHECKSEQUENCEVERIFY.
-        if (nSequence.lt(new BN(0))) {
-          this.errstr = 'SCRIPT_ERR_NEGATIVE_LOCKTIME';
-          return false;
-        }
-
-        // To provide for future soft-fork extensibility, if the
-        // operand has the disabled lock-time flag set,
-        // CHECKSEQUENCEVERIFY behaves as a NOP.
-        if ((nSequence &
-          Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) != 0) {
-          break;
-        }
-
-        // Actually compare the specified lock time with the transaction.
-        if (!this.checkSequence(nSequence)) {
-          this.errstr = 'SCRIPT_ERR_UNSATISFIED_LOCKTIME';
-          return false;
-        }
-        break;
-
-
-
       case Opcode.OP_NOP1:
+      case Opcode.OP_NOP3:
       case Opcode.OP_NOP4:
       case Opcode.OP_NOP5:
       case Opcode.OP_NOP6:
@@ -31666,20 +31430,7 @@ Interpreter.prototype.step = function() {
               this.errstr = 'SCRIPT_ERR_UNBALANCED_CONDITIONAL';
               return false;
             }
-
             buf = this.stack[this.stack.length - 1];
-
-            if (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALIF) {
-              buf = this.stack[this.stack.length - 1];
-              if (buf.length > 1) {
-                this.errstr = 'SCRIPT_ERR_MINIMALIF';
-                return false;
-              }
-              if (buf.length == 1 && buf[0]!=1) {
-                this.errstr = 'SCRIPT_ERR_MINIMALIF';
-                return false;
-              }
-            }
             fValue = Interpreter.castToBool(buf);
             if (opcodenum === Opcode.OP_NOTIF) {
               fValue = !fValue;
@@ -32247,16 +31998,10 @@ Interpreter.prototype.step = function() {
           try {
             sig = Signature.fromTxFormat(bufSig);
             pubkey = PublicKey.fromBuffer(bufPubkey, false);
-            fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.sigversion, this.satoshis);
+            fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshis);
           } catch (e) {
             //invalid sig or pubkey
             fSuccess = false;
-          }
-
-          if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
-            bufSig.length) {
-            this.errstr = 'SCRIPT_ERR_NULLFAIL';
-            return false;
           }
 
           this.stack.pop();
@@ -32299,12 +32044,6 @@ Interpreter.prototype.step = function() {
           // int ikey = ++i;
           var ikey = ++i;
           i += nKeysCount;
-
-          // ikey2 is the position of last non-signature item in
-          // the stack. Top stack item = 1. With
-          // SCRIPT_VERIFY_NULLFAIL, this is used for cleanup if
-          // operation fails.
-          var ikey2 = nKeysCount + 2;
 
           if (this.stack.length < i) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
@@ -32350,7 +32089,7 @@ Interpreter.prototype.step = function() {
             try {
               sig = Signature.fromTxFormat(bufSig);
               pubkey = PublicKey.fromBuffer(bufPubkey, false);
-              fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.sigversion, this.satoshis);
+              fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshis);
             } catch (e) {
               //invalid sig or pubkey
               fOk = false;
@@ -32373,17 +32112,6 @@ Interpreter.prototype.step = function() {
 
           // Clean up stack of actual arguments
           while (i-- > 1) {
-            if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
-              !ikey2 && this.stack[this.stack.length - 1].length) {
-
-              this.errstr = 'SCRIPT_ERR_NULLFAIL';
-              return false;
-            }
-
-            if (ikey2 > 0) {
-              ikey2--;
-            }
-
             this.stack.pop();
           }
 
@@ -32427,7 +32155,7 @@ Interpreter.prototype.step = function() {
 
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/bn":169,"../crypto/hash":171,"../crypto/signature":174,"../opcode":185,"../publickey":187,"../transaction":191,"./script":190,"buffer":52,"lodash":245}],190:[function(require,module,exports){
+},{"../crypto/bn":169,"../crypto/hash":171,"../crypto/signature":174,"../opcode":185,"../publickey":187,"../transaction":191,"./script":190,"buffer":52,"lodash":250}],190:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -32447,7 +32175,7 @@ var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
 
 /**
- * A bitcoin transaction script. Each transaction's inputs and outputs
+ * A litecoinz transaction script. Each transaction's inputs and outputs
  * has a script that is evaluated to validate it's spending.
  *
  * See https://en.bitcoin.it/wiki/Script
@@ -32836,49 +32564,6 @@ Script.prototype.isScriptHashOut = function() {
 };
 
 /**
- * @returns {boolean} if this is a p2wsh output script
- */
-Script.prototype.isWitnessScriptHashOut = function() {
-  var buf = this.toBuffer();
-  return (buf.length === 34 && buf[0] === 0 && buf[1] === 32);
-};
-
-/**
- * @returns {boolean} if this is a p2wpkh output script
- */
-Script.prototype.isWitnessPublicKeyHashOut = function() {
-  var buf = this.toBuffer();
-  return (buf.length === 22 && buf[0] === 0 && buf[1] === 20);
-};
-
-/**
- * @param {Object=} values - The return values
- * @param {Number} values.version - Set with the witness version
- * @param {Buffer} values.program - Set with the witness program
- * @returns {boolean} if this is a p2wpkh output script
- */
-Script.prototype.isWitnessProgram = function(values) {
-  if (!values) {
-    values = {};
-  }
-  var buf = this.toBuffer();
-  if (buf.length < 4 || buf.length > 42) {
-    return false;
-  }
-  if (buf[0] !== Opcode.OP_0 && !(buf[0] >= Opcode.OP_1 && buf[0] <= Opcode.OP_16)) {
-    return false;
-  }
-
-  if (buf.length === buf[1] + 2) {
-    values.version = buf[0];
-    values.program = buf.slice(2, buf.length);
-    return true;
-  }
-
-  return false;
-};
-
-/**
  * @returns {boolean} if this is a p2sh input script
  * Note that these are frequently indistinguishable from pubkeyhashin
  */
@@ -33216,17 +32901,6 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts) {
   return script;
 };
 
-Script.buildWitnessMultisigOutFromScript = function(script) {
-  if (script instanceof Script) {
-    var s = new Script();
-    s.add(Opcode.OP_0);
-    s.add(Hash.sha256(script.toBuffer()));
-    return s;
-  } else {
-    throw new TypeError('First argument is expected to be a p2sh script');
-  }
-};
-
 /**
  * A new Multisig input script for the given public keys, requiring m of those public keys to spend
  *
@@ -33494,7 +33168,7 @@ Script.prototype.toAddress = function(network) {
 };
 
 /**
- * Analogous to bitcoind's FindAndDelete. Find and delete equivalent chunks,
+ * Analogous to litecoinzd's FindAndDelete. Find and delete equivalent chunks,
  * typically used with push data chunks.  Note that this will find and delete
  * not just the same data, but the same data with the same push data op as
  * produced by default. i.e., if a pushdata in a tx does not use the minimal
@@ -33518,7 +33192,7 @@ Script.prototype.findAndDelete = function(script) {
 };
 
 /**
- * Comes from bitcoind's script interpreter CheckMinimalPush function
+ * Comes from litecoinzd's script interpreter CheckMinimalPush function
  * @returns {boolean} if the chunk {i} is the smallest way to push that particular data.
  */
 Script.prototype.checkMinimalPush = function(i) {
@@ -33551,7 +33225,7 @@ Script.prototype.checkMinimalPush = function(i) {
 };
 
 /**
- * Comes from bitcoind's script DecodeOP_N function
+ * Comes from litecoinzd's script DecodeOP_N function
  * @param {number} opcode
  * @returns {number} numeric value in range of 0 to 16
  */
@@ -33566,7 +33240,7 @@ Script.prototype._decodeOP_N = function(opcode) {
 };
 
 /**
- * Comes from bitcoind's script GetSigOpCount(boolean) function
+ * Comes from litecoinzd's script GetSigOpCount(boolean) function
  * @param {boolean} use current (true) or pre-version-0.6 (false) logic
  * @returns {number} number of signature operations required by this script
  */
@@ -33594,7 +33268,7 @@ Script.prototype.getSignatureOperationsCount = function(accurate) {
 module.exports = Script;
 
 }).call(this,require("buffer").Buffer)
-},{"../address":164,"../crypto/hash":171,"../crypto/signature":174,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../errors":180,"../networks":184,"../opcode":185,"../publickey":187,"../util/buffer":206,"../util/js":207,"../util/preconditions":208,"buffer":52,"lodash":245}],191:[function(require,module,exports){
+},{"../address":164,"../crypto/hash":171,"../crypto/signature":174,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../errors":180,"../networks":184,"../opcode":185,"../publickey":187,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"buffer":52,"lodash":250}],191:[function(require,module,exports){
 module.exports = require('./transaction');
 
 module.exports.Input = require('./input');
@@ -33602,9 +33276,8 @@ module.exports.Output = require('./output');
 module.exports.UnspentOutput = require('./unspentoutput');
 module.exports.Signature = require('./signature');
 module.exports.Sighash = require('./sighash');
-module.exports.SighashWitness = require('./sighashwitness');
 
-},{"./input":192,"./output":198,"./sighash":199,"./sighashwitness":200,"./signature":201,"./transaction":202,"./unspentoutput":203}],192:[function(require,module,exports){
+},{"./input":192,"./output":199,"./sighash":201,"./signature":202,"./transaction":204,"./unspentoutput":205}],192:[function(require,module,exports){
 module.exports = require('./input');
 
 module.exports.PublicKey = require('./publickey');
@@ -33673,7 +33346,6 @@ Input.prototype._fromObject = function(params) {
   } else {
     prevTxId = params.prevTxId;
   }
-  this.witnesses = [];
   this.output = params.output ?
     (params.output instanceof Output ? params.output : new Output(params.output)) : undefined;
   this.prevTxId = prevTxId || params.txidbuf;
@@ -33792,21 +33464,6 @@ Input.prototype.clearSignatures = function() {
   throw new errors.AbstractMethodInvoked('Input#clearSignatures');
 };
 
-Input.prototype.hasWitnesses = function() {
-  if (this.witnesses && this.witnesses.length > 0) {
-    return true;
-  }
-  return false;
-};
-
-Input.prototype.getWitnesses = function() {
-  return this.witnesses;
-};
-
-Input.prototype.setWitnesses = function(witnesses) {
-  this.witnesses = witnesses;
-};
-
 Input.prototype.isValidSignature = function(transaction, signature) {
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
@@ -33833,7 +33490,7 @@ Input.prototype._estimateSize = function() {
 
 module.exports = Input;
 
-},{"../../encoding/bufferwriter":178,"../../errors":180,"../../script":188,"../../util/buffer":206,"../../util/js":207,"../../util/preconditions":208,"../output":198,"../sighash":199,"buffer":52,"lodash":245}],194:[function(require,module,exports){
+},{"../../encoding/bufferwriter":178,"../../errors":180,"../../script":188,"../../util/buffer":208,"../../util/js":209,"../../util/preconditions":210,"../output":199,"../sighash":201,"buffer":52,"lodash":250}],194:[function(require,module,exports){
 'use strict';
 
 var _ = require('lodash');
@@ -34051,8 +33708,7 @@ MultiSigInput.prototype._estimateSize = function() {
 
 module.exports = MultiSigInput;
 
-},{"../../crypto/signature":174,"../../publickey":187,"../../script":188,"../../util/buffer":206,"../../util/preconditions":208,"../output":198,"../sighash":199,"../signature":201,"../transaction":202,"./input":193,"inherits":244,"lodash":245}],195:[function(require,module,exports){
-(function (Buffer){
+},{"../../crypto/signature":174,"../../publickey":187,"../../script":188,"../../util/buffer":208,"../../util/preconditions":210,"../output":199,"../sighash":201,"../signature":202,"../transaction":204,"./input":193,"inherits":249,"lodash":250}],195:[function(require,module,exports){
 'use strict';
 
 /* jshint maxparams:5 */
@@ -34066,7 +33722,6 @@ var $ = require('../../util/preconditions');
 var Script = require('../../script');
 var Signature = require('../../crypto/signature');
 var Sighash = require('../sighash');
-var SighashWitness = require('../sighashwitness');
 var BufferWriter = require('../../encoding/bufferwriter');
 var BufferUtil = require('../../util/buffer');
 var TransactionSignature = require('../signature');
@@ -34074,7 +33729,7 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWitness, opts) {
+function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
   /* jshint maxstatements:20 */
   opts = opts || {};
   Input.apply(this, arguments);
@@ -34082,25 +33737,14 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWi
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.nestedWitness = nestedWitness ? true : false;
   if (opts.noSorting) {
     this.publicKeys = pubkeys
   } else  {
     this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
   }
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold);
-  if (this.nestedWitness) {
-    var nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
-    $.checkState(Script.buildScriptHashOut(nested).equals(this.output.script),
-                 'Provided public keys don\'t hash to the provided output (nested witness)');
-    var scriptSig = new Script();
-    scriptSig.add(nested.toBuffer());
-    this.setScript(scriptSig);
-  } else {
-    $.checkState(Script.buildScriptHashOut(this.redeemScript).equals(this.output.script),
+  $.checkState(Script.buildScriptHashOut(this.redeemScript).equals(this.output.script),
                'Provided public keys don\'t hash to the provided output');
-  }
-
   this.publicKeyIndex = {};
   _.each(this.publicKeys, function(publicKey, index) {
     self.publicKeyIndex[publicKey.toString()] = index;
@@ -34152,13 +33796,7 @@ MultiSigScriptHashInput.prototype.getScriptCode = function() {
 MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
   var self = this;
   var hash;
-  if (self.nestedWitness) {
-    var scriptCode = self.getScriptCode();
-    var satoshisBuffer = self.getSatoshisBuffer();
-    hash = SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
-  } else  {
-    hash = Sighash.sighash(transaction, sigtype, index, self.redeemScript);
-  }
+  hash = Sighash.sighash(transaction, sigtype, index, self.redeemScript);
   return hash;
 };
 
@@ -34171,13 +33809,7 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
   _.each(this.publicKeys, function(publicKey) {
     if (publicKey.toString() === privateKey.publicKey.toString()) {
       var signature;
-      if (self.nestedWitness) {
-        var scriptCode = self.getScriptCode();
-        var satoshisBuffer = self.getSatoshisBuffer();
-        signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer);
-      } else  {
-        signature = Sighash.sign(transaction, privateKey, sigtype, index, self.redeemScript);
-      }
+      signature = Sighash.sign(transaction, privateKey, sigtype, index, self.redeemScript);
       results.push(new TransactionSignature({
         publicKey: privateKey.publicKey,
         prevTxId: self.prevTxId,
@@ -34202,25 +33834,13 @@ MultiSigScriptHashInput.prototype.addSignature = function(transaction, signature
 };
 
 MultiSigScriptHashInput.prototype._updateScript = function() {
-  if (this.nestedWitness) {
-    var stack = [
-      new Buffer(0),
-    ];
-    var signatures = this._createSignatures();
-    for (var i = 0; i < signatures.length; i++) {
-      stack.push(signatures[i]);
-    }
-    stack.push(this.redeemScript.toBuffer());
-    this.setWitnesses(stack);
-  } else {
-    var scriptSig = Script.buildP2SHMultisigIn(
-      this.publicKeys,
-      this.threshold,
-      this._createSignatures(),
-      { cachedMultisig: this.redeemScript }
-    );
-    this.setScript(scriptSig);
-  }
+  var scriptSig = Script.buildP2SHMultisigIn(
+    this.publicKeys,
+    this.threshold,
+    this._createSignatures(),
+    { cachedMultisig: this.redeemScript }
+  );
+  this.setScript(scriptSig);
   return this;
 };
 
@@ -34263,29 +33883,15 @@ MultiSigScriptHashInput.prototype.publicKeysWithoutSignature = function() {
 };
 
 MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signature) {
-  if (this.nestedWitness) {
-    signature.signature.nhashtype = signature.sigtype;
-    var scriptCode = this.getScriptCode();
-    var satoshisBuffer = this.getSatoshisBuffer();
-    return SighashWitness.verify(
-      transaction,
-      signature.signature,
-      signature.publicKey,
-      signature.inputIndex,
-      scriptCode,
-      satoshisBuffer
-    );
-  } else {
-    // FIXME: Refactor signature so this is not necessary
-    signature.signature.nhashtype = signature.sigtype;
-    return Sighash.verify(
-      transaction,
-      signature.signature,
-      signature.publicKey,
-      signature.inputIndex,
-      this.redeemScript
-    );
-  }
+  // FIXME: Refactor signature so this is not necessary
+  signature.signature.nhashtype = signature.sigtype;
+  return Sighash.verify(
+    transaction,
+    signature.signature,
+    signature.publicKey,
+    signature.inputIndex,
+    this.redeemScript
+  );
 };
 
 MultiSigScriptHashInput.OPCODES_SIZE = 7; // serialized size (<=3) + 0 .. N .. M OP_CHECKMULTISIG
@@ -34300,8 +33906,7 @@ MultiSigScriptHashInput.prototype._estimateSize = function() {
 
 module.exports = MultiSigScriptHashInput;
 
-}).call(this,require("buffer").Buffer)
-},{"../../crypto/signature":174,"../../encoding/bufferwriter":178,"../../script":188,"../../util/buffer":206,"../../util/preconditions":208,"../output":198,"../sighash":199,"../sighashwitness":200,"../signature":201,"./input":193,"buffer":52,"inherits":244,"lodash":245}],196:[function(require,module,exports){
+},{"../../crypto/signature":174,"../../encoding/bufferwriter":178,"../../script":188,"../../util/buffer":208,"../../util/preconditions":210,"../output":199,"../sighash":201,"../signature":202,"./input":193,"inherits":249,"lodash":250}],196:[function(require,module,exports){
 'use strict';
 
 var inherits = require('inherits');
@@ -34392,7 +33997,7 @@ PublicKeyInput.prototype._estimateSize = function() {
 
 module.exports = PublicKeyInput;
 
-},{"../../crypto/signature":174,"../../script":188,"../../util/buffer":206,"../../util/preconditions":208,"../output":198,"../sighash":199,"../signature":201,"./input":193,"inherits":244}],197:[function(require,module,exports){
+},{"../../crypto/signature":174,"../../script":188,"../../util/buffer":208,"../../util/preconditions":210,"../output":199,"../sighash":201,"../signature":202,"./input":193,"inherits":249}],197:[function(require,module,exports){
 'use strict';
 
 var inherits = require('inherits');
@@ -34489,7 +34094,227 @@ PublicKeyHashInput.prototype._estimateSize = function() {
 
 module.exports = PublicKeyHashInput;
 
-},{"../../crypto/hash":171,"../../crypto/signature":174,"../../script":188,"../../util/buffer":206,"../../util/preconditions":208,"../output":198,"../sighash":199,"../signature":201,"./input":193,"inherits":244}],198:[function(require,module,exports){
+},{"../../crypto/hash":171,"../../crypto/signature":174,"../../script":188,"../../util/buffer":208,"../../util/preconditions":210,"../output":199,"../sighash":201,"../signature":202,"./input":193,"inherits":249}],198:[function(require,module,exports){
+'use strict';
+
+var _ = require('lodash');
+var $ = require('../util/preconditions');
+var BN = require('../crypto/bn');
+var buffer = require('buffer');
+var BufferWriter = require('../encoding/bufferwriter');
+var BufferUtil = require('../util/buffer');
+var JSUtil = require('../util/js');
+
+// TODO: Update ZCProof for Groth
+//var ZCProof = require('../zcash/proof');
+
+var ZC_NUM_JS_INPUTS = 2;
+var ZC_NUM_JS_OUTPUTS = 2;
+
+// leading + v + rho + r + memo + auth
+var ZC_NOTECIPHERTEXT_SIZE = 1 + 8 + 32 + 32 + 512 + 16;
+
+function JSDescription(params) {
+  if (!(this instanceof JSDescription)) {
+    return new JSDescription(params);
+  }
+  this.nullifiers = [];
+  this.commitments = [];
+  this.ciphertexts = [];
+  this.macs = [];
+  if (params) {
+    return this._fromObject(params);
+  }
+}
+
+Object.defineProperty(JSDescription.prototype, 'vpub_old', {
+  configurable: false,
+  enumerable: true,
+  get: function() {
+    return this._vpub_old;
+  },
+  set: function(num) {
+    if (num instanceof BN) {
+      this._vpub_oldBN = num;
+      this._vpub_old = num.toNumber();
+    } else if (_.isString(num)) {
+      this._vpub_old = parseInt(num);
+      this._vpub_oldBN = BN.fromNumber(this._vpub_old);
+    } else {
+      $.checkArgument(
+        JSUtil.isNaturalNumber(num),
+        'vpub_old is not a natural number'
+      );
+      this._vpub_oldBN = BN.fromNumber(num);
+      this._vpub_old = num;
+    }
+    $.checkState(
+      JSUtil.isNaturalNumber(this._vpub_old),
+      'vpub_old is not a natural number'
+    );
+  }
+});
+
+Object.defineProperty(JSDescription.prototype, 'vpub_new', {
+  configurable: false,
+  enumerable: true,
+  get: function() {
+    return this._vpub_new;
+  },
+  set: function(num) {
+    if (num instanceof BN) {
+      this._vpub_newBN = num;
+      this._vpub_new = num.toNumber();
+    } else if (_.isString(num)) {
+      this._vpub_new = parseInt(num);
+      this._vpub_newBN = BN.fromNumber(this._vpub_new);
+    } else {
+      $.checkArgument(
+        JSUtil.isNaturalNumber(num),
+        'vpub_new is not a natural number'
+      );
+      this._vpub_newBN = BN.fromNumber(num);
+      this._vpub_new = num;
+    }
+    $.checkState(
+      JSUtil.isNaturalNumber(this._vpub_new),
+      'vpub_new is not a natural number'
+    );
+  }
+});
+
+JSDescription.fromObject = function(obj) {
+  $.checkArgument(_.isObject(obj));
+  var jsdesc = new JSDescription();
+  return jsdesc._fromObject(obj);
+};
+
+JSDescription.prototype._fromObject = function(params) {
+  var nullifiers = [];
+  _.each(params.nullifiers, function(nullifier) {
+    nullifiers.push(BufferUtil.reverse(new buffer.Buffer(nullifier, 'hex')));
+  });
+  var commitments = [];
+  _.each(params.commitments, function(commitment) {
+    commitments.push(BufferUtil.reverse(new buffer.Buffer(commitment, 'hex')));
+  });
+  var ciphertexts = [];
+  _.each(params.ciphertexts, function(ciphertext) {
+    ciphertexts.push(new buffer.Buffer(ciphertext, 'hex'));
+  });
+  var macs = [];
+  _.each(params.macs, function(mac) {
+    macs.push(BufferUtil.reverse(new buffer.Buffer(mac, 'hex')));
+  });
+  this.vpub_old = params.vpub_old;
+  this.vpub_new = params.vpub_new;
+  this.anchor = BufferUtil.reverse(new buffer.Buffer(params.anchor, 'hex'));
+  this.nullifiers = nullifiers;
+  this.commitments = commitments;
+  this.ephemeralKey = BufferUtil.reverse(new buffer.Buffer(params.ephemeralKey, 'hex'));
+  this.ciphertexts = ciphertexts;
+  this.randomSeed = BufferUtil.reverse(new buffer.Buffer(params.randomSeed, 'hex'));
+  this.macs = macs;
+  this.proof = params.proof; // TODO: Update ZCProof for Groth: ZCProof.fromObject(params.proof);
+  return this;
+};
+
+JSDescription.prototype.toObject = JSDescription.prototype.toJSON = function toObject() {
+  var nullifiers = [];
+  _.each(this.nullifiers, function(nullifier) {
+    nullifiers.push(BufferUtil.reverse(nullifier).toString('hex'));
+  });
+  var commitments = [];
+  _.each(this.commitments, function(commitment) {
+    commitments.push(BufferUtil.reverse(commitment).toString('hex'));
+  });
+  var ciphertexts = [];
+  _.each(this.ciphertexts, function(ciphertext) {
+    ciphertexts.push(ciphertext.toString('hex'));
+  });
+  var macs = [];
+  _.each(this.macs, function(mac) {
+    macs.push(BufferUtil.reverse(mac).toString('hex'));
+  });
+  var obj = {
+    vpub_old: this.vpub_old,
+    vpub_new: this.vpub_new,
+    anchor: BufferUtil.reverse(this.anchor).toString('hex'),
+    nullifiers: nullifiers,
+    commitments: commitments,
+    ephemeralKey: BufferUtil.reverse(this.ephemeralKey).toString('hex'),
+    ciphertexts: ciphertexts,
+    randomSeed: BufferUtil.reverse(this.randomSeed).toString('hex'),
+    macs: macs,
+    proof: this.proof, // TODO: Update ZCProof for Groth: this.proof.toObject(),
+  };
+  return obj;
+};
+
+JSDescription.fromBufferReader = function(br, useGrothFlagParam) {
+  var i;
+  var jsdesc = new JSDescription();
+  jsdesc.vpub_old = br.readUInt64LE();
+  jsdesc.vpub_new = br.readUInt64LE();
+  jsdesc.anchor = br.read(32);
+  for (i = 0; i < ZC_NUM_JS_INPUTS; i++) {
+    jsdesc.nullifiers.push(br.read(32));
+  }
+  for (i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
+    jsdesc.commitments.push(br.read(32));
+  }
+  jsdesc.ephemeralKey = br.read(32);
+  jsdesc.randomSeed = br.read(32);
+  for (i = 0; i < ZC_NUM_JS_INPUTS; i++) {
+    jsdesc.macs.push(br.read(32));
+  }
+
+  // Default parameter requires ECMASCript 6 which might not be available, so use workaround.
+  var useGrothFlag = useGrothFlagParam || false;
+  if (!useGrothFlag) {
+    jsdesc.proof = br.read(296); // TODO: Update ZCProof for Groth: ZCProof.fromBufferReader(br);
+  } else {
+    jsdesc.proof = br.read(48 + 96 + 48);
+  }
+
+  for (i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
+    jsdesc.ciphertexts.push(br.read(ZC_NOTECIPHERTEXT_SIZE));
+  }
+  return jsdesc;
+};
+
+JSDescription.prototype.toBufferWriter = function(writer) {
+  var i;
+  if (!writer) {
+    writer = new BufferWriter();
+  }
+  writer.writeUInt64LE(this._vpub_oldBN);
+  writer.writeUInt64LE(this._vpub_newBN);
+  writer.write(this.anchor);
+  for (i = 0; i < ZC_NUM_JS_INPUTS; i++) {
+    writer.write(this.nullifiers[i]);
+  }
+  for (i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
+    writer.write(this.commitments[i]);
+  }
+  writer.write(this.ephemeralKey);
+  writer.write(this.randomSeed);
+  for (i = 0; i < ZC_NUM_JS_INPUTS; i++) {
+    writer.write(this.macs[i]);
+  }
+
+  // TODO: Update ZCProof for Groth: this.proof.toBufferWriter(writer);
+  writer.write(this.proof);
+
+  for (i = 0; i < ZC_NUM_JS_OUTPUTS; i++) {
+    writer.write(this.ciphertexts[i]);
+  }
+  return writer;
+};
+
+module.exports = JSDescription;
+
+},{"../crypto/bn":169,"../encoding/bufferwriter":178,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"buffer":52,"lodash":250}],199:[function(require,module,exports){
 'use strict';
 
 var _ = require('lodash');
@@ -34659,7 +34484,87 @@ Output.prototype.toBufferWriter = function(writer) {
 
 module.exports = Output;
 
-},{"../crypto/bn":169,"../encoding/bufferwriter":178,"../errors":180,"../script":188,"../util/buffer":206,"../util/js":207,"../util/preconditions":208,"buffer":52,"lodash":245}],199:[function(require,module,exports){
+},{"../crypto/bn":169,"../encoding/bufferwriter":178,"../errors":180,"../script":188,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"buffer":52,"lodash":250}],200:[function(require,module,exports){
+'use strict';
+
+var _ = require('lodash');
+var $ = require('../util/preconditions');
+var BN = require('../crypto/bn');
+var buffer = require('buffer');
+var BufferWriter = require('../encoding/bufferwriter');
+var BufferUtil = require('../util/buffer');
+var JSUtil = require('../util/js');
+
+// Sapling note magic values, copied from src/zcash/Zcash.h
+var NOTEENCRYPTION_AUTH_BYTES = 16;
+var ZC_NOTEPLAINTEXT_LEADING = 1;
+var ZC_V_SIZE = 8;
+var ZC_RHO_SIZE = 32;
+var ZC_R_SIZE = 32;
+var ZC_MEMO_SIZE = 512;
+var ZC_DIVERSIFIER_SIZE = 11;
+var ZC_JUBJUB_POINT_SIZE = 32;
+var ZC_JUBJUB_SCALAR_SIZE = 32;
+var ZC_NOTEPLAINTEXT_SIZE = ZC_NOTEPLAINTEXT_LEADING + ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE;
+var ZC_SAPLING_ENCPLAINTEXT_SIZE = ZC_NOTEPLAINTEXT_LEADING + ZC_DIVERSIFIER_SIZE + ZC_V_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE;
+var ZC_SAPLING_OUTPLAINTEXT_SIZE = ZC_JUBJUB_POINT_SIZE + ZC_JUBJUB_SCALAR_SIZE;
+var ZC_SAPLING_ENCCIPHERTEXT_SIZE = ZC_SAPLING_ENCPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES;
+var ZC_SAPLING_OUTCIPHERTEXT_SIZE = ZC_SAPLING_OUTPLAINTEXT_SIZE + NOTEENCRYPTION_AUTH_BYTES;
+
+function OutputDescription(params) {
+  if (!(this instanceof OutputDescription)) {
+    return new OutputDescription(params);
+  }
+  if (params) {
+    return this._fromObject(params);
+  }
+}
+
+OutputDescription.fromObject = function(obj) {
+  $.checkArgument(_.isObject(obj));
+  var outputdesc = new OutputDescription();
+  return outputdesc._fromObject(obj);
+};
+
+OutputDescription.prototype._fromObject = function(params) {
+  // TODO: Populate from parameters, but for now it's ok to do nothing.
+  return this;
+};
+
+OutputDescription.prototype.toObject = OutputDescription.prototype.toJSON = function toObject() {
+  // TODO: Populate JSON object, but for now it's ok to return a placeholder.
+  var obj = {};
+  return obj;
+};
+
+OutputDescription.fromBufferReader = function(br) {
+  var obj = new OutputDescription();
+  obj.cv = br.read(32);
+  obj.cmu = br.read(32);
+  obj.ephemeralKey = br.read(32);
+  obj.encCipherText = br.read(ZC_SAPLING_ENCCIPHERTEXT_SIZE);
+  obj.outCipherText = br.read(ZC_SAPLING_OUTCIPHERTEXT_SIZE);
+  obj.proof = br.read(48 + 96 + 48);
+  return obj;
+};
+
+OutputDescription.prototype.toBufferWriter = function(writer) {
+  var i;
+  if (!writer) {
+    writer = new BufferWriter();
+  }
+  writer.write(this.cv);
+  writer.write(this.cmu);
+  writer.write(this.ephemeralKey);
+  writer.write(this.encCipherText);
+  writer.write(this.outCipherText);
+  writer.write(this.proof);
+  return writer;
+};
+
+module.exports = OutputDescription;
+
+},{"../crypto/bn":169,"../encoding/bufferwriter":178,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"buffer":52,"lodash":250}],201:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -34674,10 +34579,162 @@ var BN = require('../crypto/bn');
 var Hash = require('../crypto/hash');
 var ECDSA = require('../crypto/ecdsa');
 var $ = require('../util/preconditions');
+var BufferUtil = require('../util/buffer');
+var blake2b = require('blake2b')
 var _ = require('lodash');
 
 var SIGHASH_SINGLE_BUG = '0000000000000000000000000000000000000000000000000000000000000001';
 var BITS_64_ON = 'ffffffffffffffff';
+var ZERO = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
+
+var sighashSapling = function sighash(transaction, sighashType, inputNumber, subscript) {
+  // Copyright (C) 2019 by LitecoinZ Developers.
+  //
+  // Permission is hereby granted, free of charge, to any person obtaining a copy
+  // of this software and associated documentation files (the "Software"), to deal
+  // in the Software without restriction, including without limitation the rights
+  // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  // copies of the Software, and to permit persons to whom the Software is
+  // furnished to do so, subject to the following conditions:
+  //
+  // The above copyright notice and this permission notice shall be included in all
+  // copies or substantial portions of the Software.
+  //
+  // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  // SOFTWARE.
+  //
+  var input = transaction.inputs[inputNumber];
+
+  function getBlake2bHash(bufferToHash, personalization) {
+    var out = Buffer.allocUnsafe(32);
+    return blake2b(out.length, null, null, Buffer.from(personalization)).update(bufferToHash).digest(out);
+  }
+
+  function GetPrevoutHash(tx) {
+    var writer = new BufferWriter()
+
+    _.each(tx.inputs, function(input) {
+      writer.writeReverse(input.prevTxId);
+      writer.writeUInt32LE(input.outputIndex);
+    });
+
+    return getBlake2bHash(writer.toBuffer(), 'ZcashPrevoutHash');
+  }
+
+  function GetSequenceHash(tx) {
+    var writer = new BufferWriter()
+
+    _.each(tx.inputs, function(input) {
+      writer.writeUInt32LE(input.sequenceNumber);
+    });
+
+    return getBlake2bHash(writer.toBuffer(), 'ZcashSequencHash');
+  }
+
+  function GetOutputsHash(tx, n) {
+    var writer = new BufferWriter()
+
+    if ( _.isUndefined(n)) {
+      _.each(tx.outputs, function(output) {
+        output.toBufferWriter(writer);
+      });
+    } else {
+      tx.outputs[n].toBufferWriter(writer);
+    }
+
+    return getBlake2bHash(writer.toBuffer(), 'ZcashOutputsHash');
+  }
+
+  var hashPrevouts = ZERO;
+  var hashSequence = ZERO;
+  var hashOutputs = ZERO;
+  var hashJoinSplits = ZERO;
+  var hashShieldedSpends = ZERO;
+  var hashShieldedOutputs = ZERO;
+
+  var writer = new BufferWriter();
+
+  // header of the transaction (4-byte little endian)
+  var header = transaction.version | (1 << 31);
+  writer.writeInt32LE(header);
+
+  // nVersionGroupId of the transaction (4-byte little endian)
+  writer.writeUInt32LE(transaction.nVersionGroupId);
+
+  // hashPrevouts (32-byte hash)
+  if (!(sighashType & Signature.SIGHASH_ANYONECANPAY)) {
+    hashPrevouts = GetPrevoutHash(transaction);
+  }
+  writer.write(hashPrevouts);
+
+  // hashSequence (32-byte hash)
+  if (!(sighashType & Signature.SIGHASH_ANYONECANPAY) &&
+    (sighashType & 31) != Signature.SIGHASH_SINGLE &&
+    (sighashType & 31) != Signature.SIGHASH_NONE) {
+    hashSequence = GetSequenceHash(transaction);
+  }
+  writer.write(hashSequence);
+
+  // hashOutputs (32-byte hash)
+  if ((sighashType & 31) != Signature.SIGHASH_SINGLE && (sighashType & 31) != Signature.SIGHASH_NONE) {
+    hashOutputs = GetOutputsHash(transaction);
+  } else if ((sighashType & 31) == Signature.SIGHASH_SINGLE && inputNumber < transaction.outputs.length) {
+    hashOutputs = GetOutputsHash(transaction, inputNumber);
+  }
+  writer.write(hashOutputs);
+
+  // hashJoinSplits (32-byte hash)
+  writer.write(hashJoinSplits);
+
+  // hashShieldedSpends (32-byte hash)
+  writer.write(hashShieldedSpends);
+
+  // hashShieldedOutputs (32-byte hash)
+  writer.write(hashShieldedOutputs);
+
+  // nLockTime of the transaction (4-byte little endian)
+  writer.writeUInt32LE(transaction.nLockTime);
+
+  // nExpiryHeight of the transaction (4-byte little endian)
+  writer.writeUInt32LE(transaction.nExpiryHeight);
+
+  // valueBalance of the transaction (8-byte little endian)
+  writer.writeUInt64LE(transaction.valueBalance);
+
+  // sighash type of the signature (4-byte little endian)
+  writer.writeUInt32LE(sighashType >>>0);
+
+  // outpoint (32-byte hash + 4-byte little endian)
+  writer.writeReverse(input.prevTxId);
+  writer.writeUInt32LE(input.outputIndex);
+
+  // scriptCode of the input (serialized as scripts inside CTxOuts)
+  writer.writeVarintNum(subscript.toBuffer().length)
+  writer.write(subscript.toBuffer());
+
+  // value of the output spent by this input (8-byte little endian)
+  writer.writeUInt64LE(input.output.satoshis);
+
+  // nSequence of the input (4-byte little endian)
+  var sequenceNumber = input.sequenceNumber;
+  writer.writeUInt32LE(sequenceNumber);
+
+  var personalization = Buffer.alloc(16);
+  var prefix = 'ZcashSigHash'
+  var consensusBranchId = 1991772603;
+
+  personalization.write(prefix);
+  personalization.writeUInt32LE(consensusBranchId, prefix.length);
+
+  var ret = getBlake2bHash(writer.toBuffer(), personalization)
+  ret = new BufferReader(ret).readReverse();
+  return ret;
+}
 
 /**
  * Returns a buffer of length 32 bytes with the hash that needs to be signed
@@ -34692,6 +34749,10 @@ var BITS_64_ON = 'ffffffffffffffff';
 var sighash = function sighash(transaction, sighashType, inputNumber, subscript) {
   var Transaction = require('./transaction');
   var Input = require('./input');
+
+  if (transaction.version >= 4) {
+    return sighashSapling(transaction, sighashType, inputNumber, subscript);
+  }
 
   var i;
   // Copy transaction
@@ -34799,160 +34860,7 @@ module.exports = {
 };
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/bn":169,"../crypto/ecdsa":170,"../crypto/hash":171,"../crypto/signature":174,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../script":188,"../util/preconditions":208,"./input":192,"./output":198,"./transaction":202,"buffer":52,"lodash":245}],200:[function(require,module,exports){
-(function (Buffer){
-'use strict';
-
-/* jshint maxparams:5 */
-
-var Signature = require('../crypto/signature');
-var Script = require('../script');
-var Output = require('./output');
-var BufferReader = require('../encoding/bufferreader');
-var BufferWriter = require('../encoding/bufferwriter');
-var BN = require('../crypto/bn');
-var Hash = require('../crypto/hash');
-var ECDSA = require('../crypto/ecdsa');
-var $ = require('../util/preconditions');
-var _ = require('lodash');
-
-/**
- * Returns a buffer of length 32 bytes with the hash that needs to be signed
- * for witness programs as defined by:
- * https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki
- *
- * @name Signing.sighash
- * @param {Transaction} transaction the transaction to sign
- * @param {number} sighashType the type of the hash
- * @param {number} inputNumber the input index for the signature
- * @param {Buffer} scriptCode
- * @param {Buffer} satoshisBuffer
- */
-var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode, satoshisBuffer) {
-  /* jshint maxstatements: 50 */
-
-  var hashPrevouts;
-  var hashSequence;
-  var hashOutputs;
-
-  if (!(sighashType & Signature.SIGHASH_ANYONECANPAY)) {
-    var buffers = [];
-    for (var n = 0; n < transaction.inputs.length; n++) {
-      var input = transaction.inputs[n];
-      var prevTxIdBuffer = new BufferReader(input.prevTxId).readReverse();
-      buffers.push(prevTxIdBuffer);
-      var outputIndexBuffer = new Buffer(new Array(4));
-      outputIndexBuffer.writeUInt32LE(input.outputIndex, 0);
-      buffers.push(outputIndexBuffer);
-    }
-    hashPrevouts = Hash.sha256sha256(Buffer.concat(buffers));
-  }
-
-  if (!(sighashType & Signature.SIGHASH_ANYONECANPAY) &&
-      (sighashType & 0x1f) !== Signature.SIGHASH_SINGLE && (sighashType & 0x1f) !== Signature.SIGHASH_NONE) {
-
-    var sequenceBuffers = [];
-    for (var m = 0; m < transaction.inputs.length; m++) {
-      var sequenceBuffer = new Buffer(new Array(4));
-      sequenceBuffer.writeUInt32LE(transaction.inputs[m].sequenceNumber, 0);
-      sequenceBuffers.push(sequenceBuffer);
-    }
-    hashSequence = Hash.sha256sha256(Buffer.concat(sequenceBuffers));
-  }
-
-  var outputWriter = new BufferWriter();
-  if ((sighashType & 0x1f) !== Signature.SIGHASH_SINGLE && (sighashType & 0x1f) !== Signature.SIGHASH_NONE) {
-    for (var p = 0; p < transaction.outputs.length; p++) {
-      transaction.outputs[p].toBufferWriter(outputWriter);
-    }
-    hashOutputs = Hash.sha256sha256(outputWriter.toBuffer());
-  } else if ((sighashType & 0x1f) === Signature.SIGHASH_SINGLE && inputNumber < transaction.outputs.length) {
-    transaction.outputs[inputNumber].toBufferWriter(outputWriter);
-    hashOutputs = Hash.sha256sha256(outputWriter.toBuffer());
-  }
-
-  // Version
-  var writer = new BufferWriter();
-  writer.writeUInt32LE(transaction.version);
-
-  // Input prevouts/nSequence (none/all, depending on flags)
-  writer.write(hashPrevouts);
-  writer.write(hashSequence);
-
-  // The input being signed (replacing the scriptSig with scriptCode + amount)
-  // The prevout may already be contained in hashPrevout, and the nSequence
-  // may already be contain in hashSequence.
-  var outpointId = new BufferReader(transaction.inputs[inputNumber].prevTxId).readReverse();
-  writer.write(outpointId);
-  writer.writeUInt32LE(transaction.inputs[inputNumber].outputIndex);
-
-  writer.write(scriptCode);
-
-  writer.write(satoshisBuffer);
-
-  writer.writeUInt32LE(transaction.inputs[inputNumber].sequenceNumber);
-
-  // Outputs (none/one/all, depending on flags)
-  writer.write(hashOutputs);
-
-  // Locktime
-  writer.writeUInt32LE(transaction.nLockTime);
-
-  // Sighash type
-  writer.writeInt32LE(sighashType);
-
-  return Hash.sha256sha256(writer.toBuffer());
-
-};
-
-/**
- * Create a signature
- *
- * @name Signing.sign
- * @param {Transaction} transaction
- * @param {PrivateKey} privateKey
- * @param {number} sighash
- * @param {number} inputIndex
- * @param {Script} subscript
- * @return {Signature}
- */
-function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, satoshisBuffer) {
-  var hashbuf = sighash(transaction, sighashType, inputIndex, scriptCode, satoshisBuffer);
-  var sig = ECDSA.sign(hashbuf, privateKey).set({
-    nhashtype: sighashType
-  });
-  return sig;
-}
-
-/**
- * Verify a signature
- *
- * @name Signing.verify
- * @param {Transaction} transaction
- * @param {Signature} signature
- * @param {PublicKey} publicKey
- * @param {number} inputIndex
- * @param {Script} subscript
- * @return {boolean}
- */
-function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer) {
-  $.checkArgument(!_.isUndefined(transaction));
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
-  return ECDSA.verify(hashbuf, signature, publicKey);
-}
-
-/**
- * @namespace Signing
- */
-module.exports = {
-  sighash: sighash,
-  sign: sign,
-  verify: verify
-};
-
-}).call(this,require("buffer").Buffer)
-},{"../crypto/bn":169,"../crypto/ecdsa":170,"../crypto/hash":171,"../crypto/signature":174,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../script":188,"../util/preconditions":208,"./output":198,"buffer":52,"lodash":245}],201:[function(require,module,exports){
+},{"../crypto/bn":169,"../crypto/ecdsa":170,"../crypto/hash":171,"../crypto/signature":174,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../script":188,"../util/buffer":208,"../util/preconditions":210,"./input":192,"./output":199,"./transaction":204,"blake2b":214,"buffer":52,"lodash":250}],202:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -35045,7 +34953,71 @@ TransactionSignature.fromObject = function(object) {
 module.exports = TransactionSignature;
 
 }).call(this,require("buffer").Buffer)
-},{"../crypto/signature":174,"../errors":180,"../publickey":187,"../util/buffer":206,"../util/js":207,"../util/preconditions":208,"buffer":52,"inherits":244,"lodash":245}],202:[function(require,module,exports){
+},{"../crypto/signature":174,"../errors":180,"../publickey":187,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"buffer":52,"inherits":249,"lodash":250}],203:[function(require,module,exports){
+'use strict';
+
+var _ = require('lodash');
+var $ = require('../util/preconditions');
+var BN = require('../crypto/bn');
+var buffer = require('buffer');
+var BufferWriter = require('../encoding/bufferwriter');
+var BufferUtil = require('../util/buffer');
+var JSUtil = require('../util/js');
+
+function SpendDescription(params) {
+  if (!(this instanceof SpendDescription)) {
+    return new SpendDescription(params);
+  }
+  if (params) {
+    return this._fromObject(params);
+  }
+}
+
+SpendDescription.fromObject = function(obj) {
+  $.checkArgument(_.isObject(obj));
+  var spenddesc = new SpendDescription();
+  return spenddesc._fromObject(obj);
+};
+
+SpendDescription.prototype._fromObject = function(params) {
+  // TODO: Populate from parameters, but for now it's ok to do nothing.
+  return this;
+};
+
+SpendDescription.prototype.toObject = SpendDescription.prototype.toJSON = function toObject() {
+  // TODO: Populate JSON object, but for now it's ok to return a placeholder.
+  var obj = {};
+  return obj;
+};
+
+SpendDescription.fromBufferReader = function(br) {
+  var obj = new SpendDescription();
+  obj.cv = br.read(32);
+  obj.anchor = br.read(32);
+  obj.nullifier = br.read(32);
+  obj.rk = br.read(32);
+  obj.proof = br.read(48 + 96 + 48);
+  obj.spendAuthSig = br.read(64);
+  return obj;
+};
+
+SpendDescription.prototype.toBufferWriter = function(writer) {
+  var i;
+  if (!writer) {
+    writer = new BufferWriter();
+  }
+  writer.write(this.cv);
+  writer.write(this.anchor);
+  writer.write(this.nullifier);
+  writer.write(this.rk);
+  writer.write(this.proof);
+  writer.write(this.spendAuthSig);
+  return writer;
+};
+
+module.exports = SpendDescription;
+
+},{"../crypto/bn":169,"../encoding/bufferwriter":178,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"buffer":52,"lodash":250}],204:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -35062,7 +35034,6 @@ var BufferWriter = require('../encoding/bufferwriter');
 var Hash = require('../crypto/hash');
 var Signature = require('../crypto/signature');
 var Sighash = require('./sighash');
-var SighashWitness = require('./sighashwitness');
 
 var Address = require('../address');
 var UnspentOutput = require('./unspentoutput');
@@ -35076,6 +35047,10 @@ var Script = require('../script');
 var PrivateKey = require('../privatekey');
 var BN = require('../crypto/bn');
 
+var JSDescription = require('./jsdescription');
+var SpendDescription = require('./spenddescription');
+var OutputDescription = require('./outputdescription');
+
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
  *
@@ -35088,8 +35063,17 @@ function Transaction(serialized) {
   }
   this.inputs = [];
   this.outputs = [];
+  this.joinSplits = [];
+
+  this.spendDescs = [];
+  this.outputDescs = [];
+
   this._inputAmount = undefined;
   this._outputAmount = undefined;
+
+  this.fOverwintered = true;
+  this.nVersionGroupId = DEFAULT_VERSION_GROUP_ID;
+  this.nExpiryHeight = DEFAULT_EXPIRY_HEIGHT;
 
   if (serialized) {
     if (serialized instanceof Transaction) {
@@ -35107,9 +35091,13 @@ function Transaction(serialized) {
     this._newTransaction();
   }
 }
-var CURRENT_VERSION = 1;
+
+var CURRENT_VERSION = 4;
 var DEFAULT_NLOCKTIME = 0;
-var MAX_BLOCK_SIZE = 1000000;
+var DEFAULT_VALUEBALANCE = 0;
+var MAX_BLOCK_SIZE = 2000000;
+var DEFAULT_EXPIRY_HEIGHT = 0;
+var DEFAULT_VERSION_GROUP_ID = 0x892f2085;
 
 // Minimum amount for an output for it not to be considered a dust output
 Transaction.DUST_AMOUNT = 546;
@@ -35118,7 +35106,7 @@ Transaction.DUST_AMOUNT = 546;
 Transaction.FEE_SECURITY_MARGIN = 150;
 
 // max amount of satoshis in circulation
-Transaction.MAX_MONEY = 21000000 * 1e8;
+Transaction.MAX_MONEY = 84000000 * 1e8;
 
 // nlocktime limit to be considered block height rather than a timestamp
 Transaction.NLOCKTIME_BLOCKHEIGHT_LIMIT = 5e8;
@@ -35156,15 +35144,6 @@ var hashProperty = {
   }
 };
 
-var witnessHashProperty = {
-  configurable: false,
-  enumerable: true,
-  get: function() {
-    return new BufferReader(this._getWitnessHash()).readReverse().toString('hex');
-  }
-};
-
-Object.defineProperty(Transaction.prototype, 'witnessHash', witnessHashProperty);
 Object.defineProperty(Transaction.prototype, 'hash', hashProperty);
 Object.defineProperty(Transaction.prototype, 'id', hashProperty);
 
@@ -35190,15 +35169,7 @@ Transaction.prototype._getHash = function() {
 };
 
 /**
- * Retrieve the little endian hash of the transaction including witness data
- * @return {Buffer}
- */
-Transaction.prototype._getWitnessHash = function() {
-  return Hash.sha256sha256(this.toBuffer(false));
-};
-
-/**
- * Retrieve a hexa string that can be used with bitcoind's CLI interface
+ * Retrieve a hexa string that can be used with litecoinzd's CLI interface
  * (decoderawtransaction, sendrawtransaction)
  *
  * @param {Object|boolean=} unsafe if true, skip all tests. if it's an object,
@@ -35208,7 +35179,7 @@ Transaction.prototype._getWitnessHash = function() {
  * * `disableLargeFees`: disable checking for fees that are too large
  * * `disableIsFullySigned`: disable checking if all inputs are fully signed
  * * `disableDustOutputs`: disable checking if there are no outputs that are dust amounts
- * * `disableMoreOutputThanInput`: disable checking if the transaction spends more bitcoins than the sum of the input amounts
+ * * `disableMoreOutputThanInput`: disable checking if the transaction spends more litecoinzs than the sum of the input amounts
  * @return {string}
  */
 Transaction.prototype.serialize = function(unsafe) {
@@ -35224,7 +35195,7 @@ Transaction.prototype.uncheckedSerialize = Transaction.prototype.toString = func
 };
 
 /**
- * Retrieve a hexa string that can be used with bitcoind's CLI interface
+ * Retrieve a hexa string that can be used with litecoinzd's CLI interface
  * (decoderawtransaction, sendrawtransaction)
  *
  * @param {Object} opts allows to skip certain tests. {@see Transaction#serialize}
@@ -35341,31 +35312,26 @@ Transaction.prototype.inspect = function() {
   return '<Transaction: ' + this.uncheckedSerialize() + '>';
 };
 
-Transaction.prototype.toBuffer = function(noWitness) {
+Transaction.prototype.toBuffer = function() {
   var writer = new BufferWriter();
-  return this.toBufferWriter(writer, noWitness).toBuffer();
+  return this.toBufferWriter(writer).toBuffer();
 };
 
-Transaction.prototype.hasWitnesses = function() {
-  for (var i = 0; i < this.inputs.length; i++) {
-    if (this.inputs[i].hasWitnesses()) {
-      return true;
-    }
+Transaction.prototype.toBufferWriter = function(writer) {
+  if (!this.fOverwintered) {
+    writer.writeUInt32LE(this.version);
+  } else {
+    // We don't use bitwise operators which expect 32 bit operands and return a 32 bit signed integer.
+    // For example, var header = 0x80000000 | this.version; returns -7fffffff (-2147483645).
+    var header = 0x80000000 + this.version;
+    writer.writeUInt32LE(header);
   }
-  return false;
-};
 
-Transaction.prototype.toBufferWriter = function(writer, noWitness) {
-  writer.writeInt32LE(this.version);
-
-  var hasWitnesses = this.hasWitnesses();
-
-  if (hasWitnesses && !noWitness) {
-    writer.write(new Buffer('0001', 'hex'));
+  if (this.fOverwintered) {
+    writer.writeUInt32LE(this.nVersionGroupId);
   }
 
   writer.writeVarintNum(this.inputs.length);
-
   _.each(this.inputs, function(input) {
     input.toBufferWriter(writer);
   });
@@ -35375,18 +35341,39 @@ Transaction.prototype.toBufferWriter = function(writer, noWitness) {
     output.toBufferWriter(writer);
   });
 
-  if (hasWitnesses && !noWitness) {
-    _.each(this.inputs, function(input) {
-      var witnesses = input.getWitnesses();
-      writer.writeVarintNum(witnesses.length);
-      for (var j = 0; j < witnesses.length; j++) {
-        writer.writeVarintNum(witnesses[j].length);
-        writer.write(witnesses[j]);
-      }
+  writer.writeUInt32LE(this.nLockTime);
+
+  if (this.fOverwintered) {
+    writer.writeUInt32LE(this.nExpiryHeight);
+  }
+
+  if (this.version >= 4) {
+    writer.writeUInt64LE(this.valueBalance);
+    writer.writeVarintNum(this.spendDescs.length);
+    _.each(this.spendDescs, function(desc) {
+      desc.toBufferWriter(writer);
+    });
+    writer.writeVarintNum(this.outputDescs.length);
+    _.each(this.outputDescs, function(desc) {
+      desc.toBufferWriter(writer);
     });
   }
 
-  writer.writeUInt32LE(this.nLockTime);
+  if (this.version >= 2) {
+    writer.writeVarintNum(this.joinSplits.length);
+    _.each(this.joinSplits, function(jsdesc) {
+      jsdesc.toBufferWriter(writer);
+    });
+    if (this.joinSplits.length > 0) {
+      writer.write(this.joinSplitPubKey);
+      writer.write(this.joinSplitSig);
+    }
+  }
+
+  if (this.version >= 4 && !(this.spendDescs.length==0 && this.outputDescs.length==0)) {
+    writer.write(this.bindingSig);
+  }
+
   return writer;
 };
 
@@ -35398,17 +35385,22 @@ Transaction.prototype.fromBuffer = function(buffer) {
 Transaction.prototype.fromBufferReader = function(reader) {
   $.checkArgument(!reader.finished(), 'No transaction data received');
 
-  this.version = reader.readInt32LE();
-  var sizeTxIns = reader.readVarintNum();
+  var sizeJSDescs, sizeSpendDescs, sizeOutputDescs;
+  var header = reader.readUInt32LE();
+  this.fOverwintered = header & 0x80000000;
 
-  // check for segwit
-  var hasWitnesses = false;
-  if (sizeTxIns === 0 && reader.buf[reader.pos] !== 0) {
-    reader.pos += 1;
-    hasWitnesses = true;
-    sizeTxIns = reader.readVarintNum();
+  this.fOverwintered = ((header >>> 31) == 1);
+  if (this.fOverwintered == true) {
+    this.version = header & 0x7fffffff;
+  } else {
+    this.version = header;
   }
 
+  if ( this.version >= 3 ){
+    this.nVersionGroupId = reader.readUInt32LE();
+  }
+
+  var sizeTxIns = reader.readVarintNum();
   for (var i = 0; i < sizeTxIns; i++) {
     var input = Input.fromBufferReader(reader);
     this.inputs.push(input);
@@ -35419,23 +35411,43 @@ Transaction.prototype.fromBufferReader = function(reader) {
     this.outputs.push(Output.fromBufferReader(reader));
   }
 
-  if (hasWitnesses) {
-    for (var k = 0; k < sizeTxIns; k++) {
-      var itemCount = reader.readVarintNum();
-      var witnesses = [];
-      for (var l = 0; l < itemCount; l++) {
-        var size = reader.readVarintNum();
-        var item = reader.read(size);
-        witnesses.push(item);
-      }
-      this.inputs[k].setWitnesses(witnesses);
+  this.nLockTime = reader.readUInt32LE();
+
+  if (this.version >= 3) {
+    this.nExpiryHeight = reader.readUInt32LE();
+  }
+
+  if (this.version >= 4) {
+    this.valueBalance = reader.readUInt64LE();
+    sizeSpendDescs = reader.readVarintNum();
+    for (i = 0; i < sizeSpendDescs; i++) {
+      var spend = SpendDescription.fromBufferReader(reader);
+      this.spendDescs.push(spend);
+    }
+    sizeOutputDescs = reader.readVarintNum();
+    for (i = 0; i < sizeOutputDescs; i++) {
+      var output = OutputDescription.fromBufferReader(reader);
+      this.outputDescs.push(output);
+    }
+  }
+  var useGrothFlag = (this.version >= 4);
+  if (this.version >= 2) {
+    sizeJSDescs = reader.readVarintNum();
+    for (i = 0; i < sizeJSDescs; i++) {
+      this.joinSplits.push(JSDescription.fromBufferReader(reader, useGrothFlag));
+    }
+    if (sizeJSDescs > 0) {
+      this.joinSplitPubKey = reader.read(32);
+      this.joinSplitSig = reader.read(64);
     }
   }
 
-  this.nLockTime = reader.readUInt32LE();
+  if (this.version >=4 && !(sizeSpendDescs==0 && sizeOutputDescs==0)) {
+    this.bindingSig = reader.read(64);
+  }
+
   return this;
 };
-
 
 Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObject() {
   var inputs = [];
@@ -35448,11 +35460,50 @@ Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObjec
   });
   var obj = {
     hash: this.hash,
+    fOverwintered: this.fOverwintered,
     version: this.version,
     inputs: inputs,
     outputs: outputs,
     nLockTime: this.nLockTime
   };
+
+  if (this.fOverwintered) {
+    obj.nVersionGroupId = this.nVersionGroupId;
+    obj.nExpiryHeight = this.nExpiryHeight;
+  }
+
+  if (this.version >= 4) {
+    obj.valueBalance - this.valueBalance;
+
+    var spendDescs = [];
+    this.spendDescs.forEach(function(desc) {
+      spendDescs.push(desc.toObject());
+    });
+    obj.spendDescs = spendDescs;
+
+    var outputDescs = [];
+    this.outputDescs.forEach(function(desc) {
+      outputDescs.push(desc.toObject());
+    });
+    obj.outputDescs = outputDescs;
+  }
+
+  if (this.version >= 2) {
+    var joinSplits = [];
+    this.joinSplits.forEach(function(joinSplit) {
+      joinSplits.push(joinSplit.toObject());
+    });
+    obj.joinSplits = joinSplits;
+    if (this.joinSplits.length > 0) {
+      obj.joinSplitPubKey = BufferUtil.reverse(this.joinSplitPubKey).toString('hex');
+      obj.joinSplitSig = this.joinSplitSig.toString('hex');
+    }
+  }
+
+  if (this.version >=4 && !(this.spendDescs.length==0 && this.outputDescs.length==0)) {
+    obj.bindingSig = this.bindingSig.toString('hex');
+  }
+
   if (this._changeScript) {
     obj.changeScript = this._changeScript.toString();
   }
@@ -35509,6 +35560,37 @@ Transaction.prototype.fromObject = function fromObject(arg) {
   }
   this.nLockTime = transaction.nLockTime;
   this.version = transaction.version;
+
+  this.fOverwintered = transaction.fOverwintered;
+  if (this.fOverwintered) {
+    this.nExpiryHeight = transaction.nExpiryHeight;
+    this.nVersionGroupId = transaction.nVersionGroupId;
+  }
+
+  if (this.version >= 4) {
+    this.valueBalance = transaction.valueBalance;
+    _.each(transaction.spendDescs, function(desc) {
+      self.spendDescs.push(new SpendDescription(desc));
+    });
+    _.each(transaction.outputDescs, function(desc) {
+      self.outputDescs.push(new OutputDescription(desc));
+    });
+  }
+
+  if (this.version >= 2) {
+    _.each(transaction.joinSplits, function(joinSplit) {
+      self.joinSplits.push(new JSDescription(joinSplit));
+    });
+    if (self.joinSplits.length > 0) {
+      self.joinSplitPubKey = BufferUtil.reverse(new Buffer(transaction.joinSplitPubKey, 'hex'));
+      self.joinSplitSig = new Buffer(transaction.joinSplitSig, 'hex');
+    }
+  }
+
+  if (this.version >=4 && !(transaction.spendDescs.length==0 && transaction.outputDescs.length==0)) {
+     this.bindingSig = transaction.bindingSig;
+  }
+
   this._checkConsistency(arg);
   return this;
 };
@@ -35602,6 +35684,10 @@ Transaction.prototype.fromString = function(string) {
 Transaction.prototype._newTransaction = function() {
   this.version = CURRENT_VERSION;
   this.nLockTime = DEFAULT_NLOCKTIME;
+  this.fOverwintered = true;
+  this.nVersionGroupId = DEFAULT_VERSION_GROUP_ID;
+  this.nExpiryHeight = DEFAULT_EXPIRY_HEIGHT;
+  this.valueBalance = DEFAULT_VALUEBALANCE;
 };
 
 /* Transaction creation interface */
@@ -35618,8 +35704,8 @@ Transaction.prototype._newTransaction = function() {
  * Add an input to this transaction. This is a high level interface
  * to add an input, for more control, use @{link Transaction#addInput}.
  *
- * Can receive, as output information, the output of bitcoind's `listunspent` command,
- * and a slightly fancier format recognized by bitcore:
+ * Can receive, as output information, the output of litecoinzd's `listunspent` command,
+ * and a slightly fancier format recognized by ltzcore-lib:
  *
  * ```
  * {
@@ -35630,8 +35716,8 @@ Transaction.prototype._newTransaction = function() {
  *  satoshis: 1020000
  * }
  * ```
- * Where `address` can be either a string or a bitcore Address object. The
- * same is true for `script`, which can be a string or a bitcore Script.
+ * Where `address` can be either a string or a ltzcore-lib Address object. The
+ * same is true for `script`, which can be a string or a ltzcore-lib Script.
  *
  * Beware that this resets all the signatures for inputs (in further versions,
  * SIGHASH_SINGLE or SIGHASH_NONE signatures will not be reset).
@@ -35640,7 +35726,7 @@ Transaction.prototype._newTransaction = function() {
  * ```javascript
  * var transaction = new Transaction();
  *
- * // From a pay to public key hash output from bitcoind's listunspent
+ * // From a pay to public key hash output from litecoinzd's listunspent
  * transaction.from({'txid': '0000...', vout: 0, amount: 0.1, scriptPubKey: 'OP_DUP ...'});
  *
  * // From a pay to public key hash output
@@ -35654,12 +35740,11 @@ Transaction.prototype._newTransaction = function() {
  * @param {(Array.<Transaction~fromObject>|Transaction~fromObject)} utxo
  * @param {Array=} pubkeys
  * @param {number=} threshold
- * @param {boolean=} nestedWitness - Indicates that the utxo is nested witness p2sh
  * @param {Object=} opts - Several options:
  *        - noSorting: defaults to false, if true and is multisig, don't
  *                      sort the given public keys before creating the script
  */
-Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, opts) {
+Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
@@ -35675,7 +35760,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, o
     return this;
   }
   if (pubkeys && threshold) {
-    this._fromMultisigUtxo(utxo, pubkeys, threshold, nestedWitness, opts);
+    this._fromMultisigUtxo(utxo, pubkeys, threshold, opts);
   } else {
     this._fromNonP2SH(utxo);
   }
@@ -35703,7 +35788,7 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
   }));
 };
 
-Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nestedWitness, opts) {
+Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
   var clazz;
@@ -35723,7 +35808,7 @@ Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nes
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
     script: Script.empty()
-  }, pubkeys, threshold, false, nestedWitness, opts));
+  }, pubkeys, threshold, false, opts));
 };
 
 /**
@@ -36245,43 +36330,14 @@ Transaction.prototype.isValidSignature = function(signature) {
 /**
  * @returns {bool} whether the signature is valid for this transaction input
  */
-Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis) {
-
-  if (_.isUndefined(sigversion)) {
-    sigversion = 0;
-  }
-
-  if (sigversion === 1) {
-    var subscriptBuffer = subscript.toBuffer();
-    var scriptCodeWriter = new BufferWriter();
-    scriptCodeWriter.writeVarintNum(subscriptBuffer.length);
-    scriptCodeWriter.write(subscriptBuffer);
-
-    var satoshisBuffer;
-    if (satoshis) {
-      $.checkState(JSUtil.isNaturalNumber(satoshis));
-      satoshisBuffer = new BufferWriter().writeUInt64LEBN(new BN(satoshis)).toBuffer();
-    } else {
-      satoshisBuffer = this.inputs[nin].getSatoshisBuffer();
-    }
-    var verified = SighashWitness.verify(
-      this,
-      sig,
-      pubkey,
-      nin,
-      scriptCodeWriter.toBuffer(),
-      satoshisBuffer
-    );
-    return verified;
-  }
-
+Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, satoshis) {
   return Sighash.verify(this, sig, pubkey, nin, subscript);
 };
 
 /**
  * Check that a transaction passes basic sanity tests. If not, return a string
  * describing the error. This function contains the same logic as
- * CheckTransaction in bitcoin core.
+ * CheckTransaction in litecoinz core.
  */
 Transaction.prototype.verify = function() {
   // Basic checks that don't depend on any context
@@ -36344,7 +36400,7 @@ Transaction.prototype.verify = function() {
 };
 
 /**
- * Analogous to bitcoind's IsCoinBase function in transaction.h
+ * Analogous to litecoinzd's IsCoinBase function in transaction.h
  */
 Transaction.prototype.isCoinbase = function() {
   return (this.inputs.length === 1 && this.inputs[0].isNull());
@@ -36383,7 +36439,7 @@ Transaction.prototype.enableRBF = function() {
 module.exports = Transaction;
 
 }).call(this,require("buffer").Buffer)
-},{"../address":164,"../crypto/bn":169,"../crypto/hash":171,"../crypto/signature":174,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../errors":180,"../privatekey":186,"../script":188,"../util/buffer":206,"../util/js":207,"../util/preconditions":208,"./input":192,"./output":198,"./sighash":199,"./sighashwitness":200,"./unspentoutput":203,"buffer":52,"buffer-compare":213,"lodash":245}],203:[function(require,module,exports){
+},{"../address":164,"../crypto/bn":169,"../crypto/hash":171,"../crypto/signature":174,"../encoding/bufferreader":177,"../encoding/bufferwriter":178,"../errors":180,"../privatekey":186,"../script":188,"../util/buffer":208,"../util/js":209,"../util/preconditions":210,"./input":192,"./jsdescription":198,"./output":199,"./outputdescription":200,"./sighash":201,"./spenddescription":203,"./unspentoutput":205,"buffer":52,"buffer-compare":218,"lodash":250}],205:[function(require,module,exports){
 'use strict';
 
 var _ = require('lodash');
@@ -36406,8 +36462,8 @@ var Unit = require('../unit');
  * @param {number=} data.outputIndex alias for `vout`
  * @param {string|Script} data.scriptPubKey the script that must be resolved to release the funds
  * @param {string|Script=} data.script alias for `scriptPubKey`
- * @param {number} data.amount amount of bitcoins associated
- * @param {number=} data.satoshis alias for `amount`, but expressed in satoshis (1 BTC = 1e8 satoshis)
+ * @param {number} data.amount amount of litecoinzs associated
+ * @param {number=} data.satoshis alias for `amount`, but expressed in satoshis (1 LTZ = 1e8 satoshis)
  * @param {string|Address=} data.address the associated address to the script, if provided
  */
 function UnspentOutput(data) {
@@ -36431,8 +36487,8 @@ function UnspentOutput(data) {
                   'Must provide the scriptPubKey for that output!');
   var script = new Script(data.scriptPubKey || data.script);
   $.checkArgument(!_.isUndefined(data.amount) || !_.isUndefined(data.satoshis),
-                      'Must provide an amount for the output');
-  var amount = !_.isUndefined(data.amount) ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;
+                  'Must provide an amount for the output');
+  var amount = !_.isUndefined(data.amount) ? new Unit.fromLTZ(data.amount).toSatoshis() : data.satoshis;
   $.checkArgument(_.isNumber(amount), 'Amount must be a number');
   JSUtil.defineImmutable(this, {
     address: address,
@@ -36479,13 +36535,13 @@ UnspentOutput.prototype.toObject = UnspentOutput.prototype.toJSON = function toO
     txid: this.txId,
     vout: this.outputIndex,
     scriptPubKey: this.script.toBuffer().toString('hex'),
-    amount: Unit.fromSatoshis(this.satoshis).toBTC()
+    amount: Unit.fromSatoshis(this.satoshis).toLTZ()
   };
 };
 
 module.exports = UnspentOutput;
 
-},{"../address":164,"../script":188,"../unit":204,"../util/js":207,"../util/preconditions":208,"lodash":245}],204:[function(require,module,exports){
+},{"../address":164,"../script":188,"../unit":206,"../util/js":209,"../util/preconditions":210,"lodash":250}],206:[function(require,module,exports){
 'use strict';
 
 var _ = require('lodash');
@@ -36494,30 +36550,30 @@ var errors = require('./errors');
 var $ = require('./util/preconditions');
 
 var UNITS = {
-  'BTC'      : [1e8, 8],
-  'mBTC'     : [1e5, 5],
-  'uBTC'     : [1e2, 2],
+  'LTZ'      : [1e8, 8],
+  'mLTZ'     : [1e5, 5],
+  'uLTZ'     : [1e2, 2],
   'bits'     : [1e2, 2],
   'satoshis' : [1, 0]
 };
 
 /**
- * Utility for handling and converting bitcoins units. The supported units are
- * BTC, mBTC, bits (also named uBTC) and satoshis. A unit instance can be created with an
- * amount and a unit code, or alternatively using static methods like {fromBTC}.
+ * Utility for handling and converting litecoinzs units. The supported units are
+ * LTZ, mLTZ, bits (also named uLTZ) and satoshis. A unit instance can be created with an
+ * amount and a unit code, or alternatively using static methods like {fromLTZ}.
  * It also allows to be created from a fiat amount and the exchange rate, or
  * alternatively using the {fromFiat} static method.
  * You can consult for different representation of a unit instance using it's
  * {to} method, the fixed unit methods like {toSatoshis} or alternatively using
  * the unit accessors. It also can be converted to a fiat amount by providing the
- * corresponding BTC/fiat exchange rate.
+ * corresponding LTZ/fiat exchange rate.
  *
  * @example
  * ```javascript
- * var sats = Unit.fromBTC(1.3).toSatoshis();
- * var mili = Unit.fromBits(1.3).to(Unit.mBTC);
+ * var sats = Unit.fromLTZ(1.3).toSatoshis();
+ * var mili = Unit.fromBits(1.3).to(Unit.mLTZ);
  * var bits = Unit.fromFiat(1.3, 350).bits;
- * var btc = new Unit(1.3, Unit.bits).BTC;
+ * var ltz = new Unit(1.3, Unit.bits).LTZ;
  * ```
  *
  * @param {Number} amount - The amount to be represented
@@ -36530,13 +36586,13 @@ function Unit(amount, code) {
     return new Unit(amount, code);
   }
 
-  // convert fiat to BTC
+  // convert fiat to LTZ
   if (_.isNumber(code)) {
     if (code <= 0) {
       throw new errors.Unit.InvalidRate(code);
     }
     amount = amount / code;
-    code = Unit.BTC;
+    code = Unit.LTZ;
   }
 
   this._value = this._from(amount, code);
@@ -36568,23 +36624,23 @@ Unit.fromObject = function fromObject(data){
 };
 
 /**
- * Returns a Unit instance created from an amount in BTC
+ * Returns a Unit instance created from an amount in LTZ
  *
- * @param {Number} amount - The amount in BTC
+ * @param {Number} amount - The amount in LTZ
  * @returns {Unit} A Unit instance
  */
-Unit.fromBTC = function(amount) {
-  return new Unit(amount, Unit.BTC);
+Unit.fromLTZ = function(amount) {
+  return new Unit(amount, Unit.LTZ);
 };
 
 /**
- * Returns a Unit instance created from an amount in mBTC
+ * Returns a Unit instance created from an amount in mLTZ
  *
- * @param {Number} amount - The amount in mBTC
+ * @param {Number} amount - The amount in mLTZ
  * @returns {Unit} A Unit instance
  */
 Unit.fromMillis = Unit.fromMilis = function(amount) {
-  return new Unit(amount, Unit.mBTC);
+  return new Unit(amount, Unit.mLTZ);
 };
 
 /**
@@ -36611,7 +36667,7 @@ Unit.fromSatoshis = function(amount) {
  * Returns a Unit instance created from a fiat amount and exchange rate.
  *
  * @param {Number} amount - The amount in fiat
- * @param {Number} rate - The exchange rate BTC/fiat
+ * @param {Number} rate - The exchange rate LTZ/fiat
  * @returns {Unit} A Unit instance
  */
 Unit.fromFiat = function(amount, rate) {
@@ -36636,7 +36692,7 @@ Unit.prototype.to = function(code) {
     if (code <= 0) {
       throw new errors.Unit.InvalidRate(code);
     }
-    return parseFloat((this.BTC * code).toFixed(2));
+    return parseFloat((this.LTZ * code).toFixed(2));
   }
 
   if (!UNITS[code]) {
@@ -36648,21 +36704,21 @@ Unit.prototype.to = function(code) {
 };
 
 /**
- * Returns the value represented in BTC
+ * Returns the value represented in LTZ
  *
- * @returns {Number} The value converted to BTC
+ * @returns {Number} The value converted to LTZ
  */
-Unit.prototype.toBTC = function() {
-  return this.to(Unit.BTC);
+Unit.prototype.toLTZ = function() {
+  return this.to(Unit.LTZ);
 };
 
 /**
- * Returns the value represented in mBTC
+ * Returns the value represented in mLTZ
  *
- * @returns {Number} The value converted to mBTC
+ * @returns {Number} The value converted to mLTZ
  */
 Unit.prototype.toMillis = Unit.prototype.toMilis = function() {
-  return this.to(Unit.mBTC);
+  return this.to(Unit.mLTZ);
 };
 
 /**
@@ -36686,7 +36742,7 @@ Unit.prototype.toSatoshis = function() {
 /**
  * Returns the value represented in fiat
  *
- * @param {string} rate - The exchange rate between BTC/currency
+ * @param {string} rate - The exchange rate between LTZ/currency
  * @returns {Number} The value converted to satoshis
  */
 Unit.prototype.atRate = function(rate) {
@@ -36709,8 +36765,8 @@ Unit.prototype.toString = function() {
  */
 Unit.prototype.toObject = Unit.prototype.toJSON = function toObject() {
   return {
-    amount: this.BTC,
-    code: Unit.BTC
+    amount: this.LTZ,
+    code: Unit.LTZ
   };
 };
 
@@ -36725,7 +36781,7 @@ Unit.prototype.inspect = function() {
 
 module.exports = Unit;
 
-},{"./errors":180,"./util/preconditions":208,"lodash":245}],205:[function(require,module,exports){
+},{"./errors":180,"./util/preconditions":210,"lodash":250}],207:[function(require,module,exports){
 'use strict';
 
 var _ = require('lodash');
@@ -36735,10 +36791,10 @@ var Address = require('./address');
 var Unit = require('./unit');
 
 /**
- * Bitcore URI
+ * Ltzcore URI
  *
- * Instantiate an URI from a bitcoin URI String or an Object. An URI instance
- * can be created with a bitcoin uri string or an object. All instances of
+ * Instantiate an URI from a litecoinz URI String or an Object. An URI instance
+ * can be created with a litecoinz uri string or an object. All instances of
  * URI are valid, the static method isValid allows checking before instantiation.
  *
  * All standard parameters can be found as members of the class, the address
@@ -36748,13 +36804,13 @@ var Unit = require('./unit');
  * @example
  * ```javascript
  *
- * var uri = new URI('bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2');
+ * var uri = new URI('litecoinz:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu?amount=1.2');
  * console.log(uri.address, uri.amount);
  * ```
  *
- * @param {string|Object} data - A bitcoin URI string or an Object
+ * @param {string|Object} data - A litecoinz URI string or an Object
  * @param {Array.<string>=} knownParams - Required non-standard params
- * @throws {TypeError} Invalid bitcoin address
+ * @throws {TypeError} Invalid litecoinz address
  * @throws {TypeError} Invalid amount
  * @throws {Error} Unknown required argument
  * @returns {URI} A new valid and frozen instance of URI
@@ -36806,16 +36862,16 @@ URI.fromObject = function fromObject(json) {
 };
 
 /**
- * Check if an bitcoin URI string is valid
+ * Check if an litecoinz URI string is valid
  *
  * @example
  * ```javascript
  *
- * var valid = URI.isValid('bitcoin:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu');
+ * var valid = URI.isValid('litecoinz:12A1MyfXbW6RhdRAZEqofac5jCQQjwEPBu');
  * // true
  * ```
  *
- * @param {string|Object} data - A bitcoin URI string or an Object
+ * @param {string|Object} data - A litecoinz URI string or an Object
  * @param {Array.<string>=} knownParams - Required non-standard params
  * @returns {boolean} Result of uri validation
  */
@@ -36829,17 +36885,17 @@ URI.isValid = function(arg, knownParams) {
 };
 
 /**
- * Convert a bitcoin URI string into a simple object.
+ * Convert a litecoinz URI string into a simple object.
  *
- * @param {string} uri - A bitcoin URI string
- * @throws {TypeError} Invalid bitcoin URI
+ * @param {string} uri - A litecoinz URI string
+ * @throws {TypeError} Invalid litecoinz URI
  * @returns {Object} An object with the parsed params
  */
 URI.parse = function(uri) {
   var info = URL.parse(uri, true);
 
-  if (info.protocol !== 'bitcoin:') {
-    throw new TypeError('Invalid bitcoin URI');
+  if (info.protocol !== 'litecoinz:') {
+    throw new TypeError('Invalid litecoinz URI');
   }
 
   // workaround to host insensitiveness
@@ -36855,7 +36911,7 @@ URI.Members = ['address', 'amount', 'message', 'label', 'r'];
  * Internal function to load the URI instance with an object.
  *
  * @param {Object} obj - Object with the information
- * @throws {TypeError} Invalid bitcoin address
+ * @throws {TypeError} Invalid litecoinz address
  * @throws {TypeError} Invalid amount
  * @throws {Error} Unknown required argument
  */
@@ -36863,7 +36919,7 @@ URI.prototype._fromObject = function(obj) {
   /* jshint maxcomplexity: 10 */
 
   if (!Address.isValid(obj.address)) {
-    throw new TypeError('Invalid bitcoin address');
+    throw new TypeError('Invalid litecoinz address');
   }
 
   this.address = new Address(obj.address);
@@ -36885,9 +36941,9 @@ URI.prototype._fromObject = function(obj) {
 };
 
 /**
- * Internal function to transform a BTC string amount into satoshis
+ * Internal function to transform a LTZ string amount into satoshis
  *
- * @param {string} amount - Amount BTC string
+ * @param {string} amount - Amount LTZ string
  * @throws {TypeError} Invalid amount
  * @returns {Object} Amount represented in satoshis
  */
@@ -36896,7 +36952,7 @@ URI.prototype._parseAmount = function(amount) {
   if (isNaN(amount)) {
     throw new TypeError('Invalid amount');
   }
-  return Unit.fromBTC(amount).toSatoshis();
+  return Unit.fromLTZ(amount).toSatoshis();
 };
 
 URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
@@ -36914,12 +36970,12 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
 /**
  * Will return a the string representation of the URI
  *
- * @returns {string} Bitcoin URI string
+ * @returns {string} LitecoinZ URI string
  */
 URI.prototype.toString = function() {
   var query = {};
   if (this.amount) {
-    query.amount = Unit.fromSatoshis(this.amount).toBTC();
+    query.amount = Unit.fromSatoshis(this.amount).toLTZ();
   }
   if (this.message) {
     query.message = this.message;
@@ -36933,7 +36989,7 @@ URI.prototype.toString = function() {
   _.extend(query, this.extras);
 
   return URL.format({
-    protocol: 'bitcoin:',
+    protocol: 'litecoinz:',
     host: this.address,
     query: query
   });
@@ -36942,7 +36998,7 @@ URI.prototype.toString = function() {
 /**
  * Will return a string formatted for the console
  *
- * @returns {string} Bitcoin URI
+ * @returns {string} LitecoinZ URI
  */
 URI.prototype.inspect = function() {
   return '<URI: ' + this.toString() + '>';
@@ -36950,7 +37006,7 @@ URI.prototype.inspect = function() {
 
 module.exports = URI;
 
-},{"./address":164,"./unit":204,"lodash":245,"url":160}],206:[function(require,module,exports){
+},{"./address":164,"./unit":206,"lodash":250,"url":160}],208:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -37131,7 +37187,7 @@ module.exports.NULL_HASH = module.exports.fill(Buffer.alloc(32), 0);
 module.exports.EMPTY_BUFFER = Buffer.alloc(0);
 
 }).call(this,require("buffer").Buffer)
-},{"./js":207,"./preconditions":208,"assert":15,"buffer":52}],207:[function(require,module,exports){
+},{"./js":209,"./preconditions":210,"assert":15,"buffer":52}],209:[function(require,module,exports){
 'use strict';
 
 var _ = require('lodash');
@@ -37217,7 +37273,7 @@ module.exports = {
   }
 };
 
-},{"lodash":245}],208:[function(require,module,exports){
+},{"lodash":250}],210:[function(require,module,exports){
 'use strict';
 
 var errors = require('../errors');
@@ -37253,7 +37309,7 @@ module.exports = {
   }
 };
 
-},{"../errors":180,"buffer":52,"lodash":245}],209:[function(require,module,exports){
+},{"../errors":180,"buffer":52,"lodash":250}],211:[function(require,module,exports){
 // base-x encoding / decoding
 // Copyright (c) 2018 base-x contributors
 // Copyright (c) 2014-2018 The Bitcoin Core developers (base58.cpp)
@@ -37405,17 +37461,527 @@ module.exports = function base (ALPHABET) {
   }
 }
 
-},{"safe-buffer":248}],210:[function(require,module,exports){
+},{"safe-buffer":254}],212:[function(require,module,exports){
+
+module.exports = loadWebAssembly
+
+// turning off support for WebAssembly, 
+//   chrome 69 has issues with loading webassembly in the main thread if the module size >4k
+loadWebAssembly.supported = false
+
+function loadWebAssembly (opts) {
+  if (!loadWebAssembly.supported) return null
+
+  var imp = opts && opts.imports
+  var wasm = toUint8Array('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')
+  var ready = null
+
+  var mod = {
+    buffer: wasm,
+    memory: null,
+    exports: null,
+    realloc: realloc,
+    onload: onload
+  }
+
+  onload(function () {})
+
+  return mod
+
+  function realloc (size) {
+    mod.exports.memory.grow(Math.ceil(Math.abs(size - mod.memory.length) / 65536))
+    mod.memory = new Uint8Array(mod.exports.memory.buffer)
+  }
+
+  function onload (cb) {
+    if (mod.exports) return cb()
+
+    if (ready) {
+      ready.then(cb.bind(null, null)).catch(cb)
+      return
+    }
+
+    try {
+      if (opts && opts.async) throw new Error('async')
+      setup({instance: new WebAssembly.Instance(new WebAssembly.Module(wasm), imp)})
+    } catch (err) {
+      ready = WebAssembly.instantiate(wasm, imp).then(setup)
+    }
+
+    onload(cb)
+  }
+
+  function setup (w) {
+    mod.exports = w.instance.exports
+    mod.memory = mod.exports.memory && mod.exports.memory.buffer && new Uint8Array(mod.exports.memory.buffer)
+  }
+}
+
+function toUint8Array (s) {
+  if (typeof atob === 'function') return new Uint8Array(atob(s).split('').map(charCodeAt))
+  return new (require('buf' + 'fer').Buffer)(s, 'base64')
+}
+
+function charCodeAt (c) {
+  return c.charCodeAt(0)
+}
+
+},{}],213:[function(require,module,exports){
+var assert = require('nanoassert')
+var wasm = require('./blake2b')()
+
+var head = 64
+var freeList = []
+
+module.exports = Blake2b
+var BYTES_MIN = module.exports.BYTES_MIN = 16
+var BYTES_MAX = module.exports.BYTES_MAX = 64
+var BYTES = module.exports.BYTES = 32
+var KEYBYTES_MIN = module.exports.KEYBYTES_MIN = 16
+var KEYBYTES_MAX = module.exports.KEYBYTES_MAX = 64
+var KEYBYTES = module.exports.KEYBYTES = 32
+var SALTBYTES = module.exports.SALTBYTES = 16
+var PERSONALBYTES = module.exports.PERSONALBYTES = 16
+
+function Blake2b (digestLength, key, salt, personal, noAssert) {
+  if (!(this instanceof Blake2b)) return new Blake2b(digestLength, key, salt, personal, noAssert)
+  if (!(wasm && wasm.exports)) throw new Error('WASM not loaded. Wait for Blake2b.ready(cb)')
+  if (!digestLength) digestLength = 32
+
+  if (noAssert !== true) {
+    assert(digestLength >= BYTES_MIN, 'digestLength must be at least ' + BYTES_MIN + ', was given ' + digestLength)
+    assert(digestLength <= BYTES_MAX, 'digestLength must be at most ' + BYTES_MAX + ', was given ' + digestLength)
+    if (key != null) assert(key.length >= KEYBYTES_MIN, 'key must be at least ' + KEYBYTES_MIN + ', was given ' + key.length)
+    if (key != null) assert(key.length <= KEYBYTES_MAX, 'key must be at least ' + KEYBYTES_MAX + ', was given ' + key.length)
+    if (salt != null) assert(salt.length === SALTBYTES, 'salt must be exactly ' + SALTBYTES + ', was given ' + salt.length)
+    if (personal != null) assert(personal.length === PERSONALBYTES, 'personal must be exactly ' + PERSONALBYTES + ', was given ' + personal.length)
+  }
+
+  if (!freeList.length) {
+    freeList.push(head)
+    head += 216
+  }
+
+  this.digestLength = digestLength
+  this.finalized = false
+  this.pointer = freeList.pop()
+
+  wasm.memory.fill(0, 0, 64)
+  wasm.memory[0] = this.digestLength
+  wasm.memory[1] = key ? key.length : 0
+  wasm.memory[2] = 1 // fanout
+  wasm.memory[3] = 1 // depth
+
+  if (salt) wasm.memory.set(salt, 32)
+  if (personal) wasm.memory.set(personal, 48)
+
+  if (this.pointer + 216 > wasm.memory.length) wasm.realloc(this.pointer + 216) // we need 216 bytes for the state
+  wasm.exports.blake2b_init(this.pointer, this.digestLength)
+
+  if (key) {
+    this.update(key)
+    wasm.memory.fill(0, head, head + key.length) // whiteout key
+    wasm.memory[this.pointer + 200] = 128
+  }
+}
+
+
+Blake2b.prototype.update = function (input) {
+  assert(this.finalized === false, 'Hash instance finalized')
+  assert(input, 'input must be TypedArray or Buffer')
+
+  if (head + input.length > wasm.memory.length) wasm.realloc(head + input.length)
+  wasm.memory.set(input, head)
+  wasm.exports.blake2b_update(this.pointer, head, head + input.length)
+  return this
+}
+
+Blake2b.prototype.digest = function (enc) {
+  assert(this.finalized === false, 'Hash instance finalized')
+  this.finalized = true
+
+  freeList.push(this.pointer)
+  wasm.exports.blake2b_final(this.pointer)
+
+  if (!enc || enc === 'binary') {
+    return wasm.memory.slice(this.pointer + 128, this.pointer + 128 + this.digestLength)
+  }
+
+  if (enc === 'hex') {
+    return hexSlice(wasm.memory, this.pointer + 128, this.digestLength)
+  }
+
+  assert(enc.length >= this.digestLength, 'input must be TypedArray or Buffer')
+  for (var i = 0; i < this.digestLength; i++) {
+    enc[i] = wasm.memory[this.pointer + 128 + i]
+  }
+
+  return enc
+}
+
+// libsodium compat
+Blake2b.prototype.final = Blake2b.prototype.digest
+
+Blake2b.WASM = wasm && wasm.buffer
+Blake2b.SUPPORTED = typeof WebAssembly !== 'undefined'
+
+Blake2b.ready = function (cb) {
+  if (!cb) cb = noop
+  if (!wasm) return cb(new Error('WebAssembly not supported'))
+
+  // backwards compat, can be removed in a new major
+  var p = new Promise(function (reject, resolve) {
+    wasm.onload(function (err) {
+      if (err) resolve()
+      else reject()
+      cb(err)
+    })
+  })
+
+  return p
+}
+
+Blake2b.prototype.ready = Blake2b.ready
+
+function noop () {}
+
+function hexSlice (buf, start, len) {
+  var str = ''
+  for (var i = 0; i < len; i++) str += toHex(buf[start + i])
+  return str
+}
+
+function toHex (n) {
+  if (n < 16) return '0' + n.toString(16)
+  return n.toString(16)
+}
+
+},{"./blake2b":212,"nanoassert":253}],214:[function(require,module,exports){
+var assert = require('nanoassert')
+var b2wasm = require('blake2b-wasm')
+
+// 64-bit unsigned addition
+// Sets v[a,a+1] += v[b,b+1]
+// v should be a Uint32Array
+function ADD64AA (v, a, b) {
+  var o0 = v[a] + v[b]
+  var o1 = v[a + 1] + v[b + 1]
+  if (o0 >= 0x100000000) {
+    o1++
+  }
+  v[a] = o0
+  v[a + 1] = o1
+}
+
+// 64-bit unsigned addition
+// Sets v[a,a+1] += b
+// b0 is the low 32 bits of b, b1 represents the high 32 bits
+function ADD64AC (v, a, b0, b1) {
+  var o0 = v[a] + b0
+  if (b0 < 0) {
+    o0 += 0x100000000
+  }
+  var o1 = v[a + 1] + b1
+  if (o0 >= 0x100000000) {
+    o1++
+  }
+  v[a] = o0
+  v[a + 1] = o1
+}
+
+// Little-endian byte access
+function B2B_GET32 (arr, i) {
+  return (arr[i] ^
+  (arr[i + 1] << 8) ^
+  (arr[i + 2] << 16) ^
+  (arr[i + 3] << 24))
+}
+
+// G Mixing function
+// The ROTRs are inlined for speed
+function B2B_G (a, b, c, d, ix, iy) {
+  var x0 = m[ix]
+  var x1 = m[ix + 1]
+  var y0 = m[iy]
+  var y1 = m[iy + 1]
+
+  ADD64AA(v, a, b) // v[a,a+1] += v[b,b+1] ... in JS we must store a uint64 as two uint32s
+  ADD64AC(v, a, x0, x1) // v[a, a+1] += x ... x0 is the low 32 bits of x, x1 is the high 32 bits
+
+  // v[d,d+1] = (v[d,d+1] xor v[a,a+1]) rotated to the right by 32 bits
+  var xor0 = v[d] ^ v[a]
+  var xor1 = v[d + 1] ^ v[a + 1]
+  v[d] = xor1
+  v[d + 1] = xor0
+
+  ADD64AA(v, c, d)
+
+  // v[b,b+1] = (v[b,b+1] xor v[c,c+1]) rotated right by 24 bits
+  xor0 = v[b] ^ v[c]
+  xor1 = v[b + 1] ^ v[c + 1]
+  v[b] = (xor0 >>> 24) ^ (xor1 << 8)
+  v[b + 1] = (xor1 >>> 24) ^ (xor0 << 8)
+
+  ADD64AA(v, a, b)
+  ADD64AC(v, a, y0, y1)
+
+  // v[d,d+1] = (v[d,d+1] xor v[a,a+1]) rotated right by 16 bits
+  xor0 = v[d] ^ v[a]
+  xor1 = v[d + 1] ^ v[a + 1]
+  v[d] = (xor0 >>> 16) ^ (xor1 << 16)
+  v[d + 1] = (xor1 >>> 16) ^ (xor0 << 16)
+
+  ADD64AA(v, c, d)
+
+  // v[b,b+1] = (v[b,b+1] xor v[c,c+1]) rotated right by 63 bits
+  xor0 = v[b] ^ v[c]
+  xor1 = v[b + 1] ^ v[c + 1]
+  v[b] = (xor1 >>> 31) ^ (xor0 << 1)
+  v[b + 1] = (xor0 >>> 31) ^ (xor1 << 1)
+}
+
+// Initialization Vector
+var BLAKE2B_IV32 = new Uint32Array([
+  0xF3BCC908, 0x6A09E667, 0x84CAA73B, 0xBB67AE85,
+  0xFE94F82B, 0x3C6EF372, 0x5F1D36F1, 0xA54FF53A,
+  0xADE682D1, 0x510E527F, 0x2B3E6C1F, 0x9B05688C,
+  0xFB41BD6B, 0x1F83D9AB, 0x137E2179, 0x5BE0CD19
+])
+
+var SIGMA8 = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3,
+  11, 8, 12, 0, 5, 2, 15, 13, 10, 14, 3, 6, 7, 1, 9, 4,
+  7, 9, 3, 1, 13, 12, 11, 14, 2, 6, 5, 10, 4, 0, 15, 8,
+  9, 0, 5, 7, 2, 4, 10, 15, 14, 1, 11, 12, 6, 8, 3, 13,
+  2, 12, 6, 10, 0, 11, 8, 3, 4, 13, 7, 5, 15, 14, 1, 9,
+  12, 5, 1, 15, 14, 13, 4, 10, 0, 7, 6, 3, 9, 2, 8, 11,
+  13, 11, 7, 14, 12, 1, 3, 9, 5, 0, 15, 4, 8, 6, 2, 10,
+  6, 15, 14, 9, 11, 3, 0, 8, 12, 2, 13, 7, 1, 4, 10, 5,
+  10, 2, 8, 4, 7, 6, 1, 5, 15, 11, 9, 14, 3, 12, 13, 0,
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  14, 10, 4, 8, 9, 15, 13, 6, 1, 12, 0, 2, 11, 7, 5, 3
+]
+
+// These are offsets into a uint64 buffer.
+// Multiply them all by 2 to make them offsets into a uint32 buffer,
+// because this is Javascript and we don't have uint64s
+var SIGMA82 = new Uint8Array(SIGMA8.map(function (x) { return x * 2 }))
+
+// Compression function. 'last' flag indicates last block.
+// Note we're representing 16 uint64s as 32 uint32s
+var v = new Uint32Array(32)
+var m = new Uint32Array(32)
+function blake2bCompress (ctx, last) {
+  var i = 0
+
+  // init work variables
+  for (i = 0; i < 16; i++) {
+    v[i] = ctx.h[i]
+    v[i + 16] = BLAKE2B_IV32[i]
+  }
+
+  // low 64 bits of offset
+  v[24] = v[24] ^ ctx.t
+  v[25] = v[25] ^ (ctx.t / 0x100000000)
+  // high 64 bits not supported, offset may not be higher than 2**53-1
+
+  // last block flag set ?
+  if (last) {
+    v[28] = ~v[28]
+    v[29] = ~v[29]
+  }
+
+  // get little-endian words
+  for (i = 0; i < 32; i++) {
+    m[i] = B2B_GET32(ctx.b, 4 * i)
+  }
+
+  // twelve rounds of mixing
+  for (i = 0; i < 12; i++) {
+    B2B_G(0, 8, 16, 24, SIGMA82[i * 16 + 0], SIGMA82[i * 16 + 1])
+    B2B_G(2, 10, 18, 26, SIGMA82[i * 16 + 2], SIGMA82[i * 16 + 3])
+    B2B_G(4, 12, 20, 28, SIGMA82[i * 16 + 4], SIGMA82[i * 16 + 5])
+    B2B_G(6, 14, 22, 30, SIGMA82[i * 16 + 6], SIGMA82[i * 16 + 7])
+    B2B_G(0, 10, 20, 30, SIGMA82[i * 16 + 8], SIGMA82[i * 16 + 9])
+    B2B_G(2, 12, 22, 24, SIGMA82[i * 16 + 10], SIGMA82[i * 16 + 11])
+    B2B_G(4, 14, 16, 26, SIGMA82[i * 16 + 12], SIGMA82[i * 16 + 13])
+    B2B_G(6, 8, 18, 28, SIGMA82[i * 16 + 14], SIGMA82[i * 16 + 15])
+  }
+
+  for (i = 0; i < 16; i++) {
+    ctx.h[i] = ctx.h[i] ^ v[i] ^ v[i + 16]
+  }
+}
+
+// reusable parameter_block
+var parameter_block = new Uint8Array([
+  0, 0, 0, 0,      //  0: outlen, keylen, fanout, depth
+  0, 0, 0, 0,      //  4: leaf length, sequential mode
+  0, 0, 0, 0,      //  8: node offset
+  0, 0, 0, 0,      // 12: node offset
+  0, 0, 0, 0,      // 16: node depth, inner length, rfu
+  0, 0, 0, 0,      // 20: rfu
+  0, 0, 0, 0,      // 24: rfu
+  0, 0, 0, 0,      // 28: rfu
+  0, 0, 0, 0,      // 32: salt
+  0, 0, 0, 0,      // 36: salt
+  0, 0, 0, 0,      // 40: salt
+  0, 0, 0, 0,      // 44: salt
+  0, 0, 0, 0,      // 48: personal
+  0, 0, 0, 0,      // 52: personal
+  0, 0, 0, 0,      // 56: personal
+  0, 0, 0, 0       // 60: personal
+])
+
+// Creates a BLAKE2b hashing context
+// Requires an output length between 1 and 64 bytes
+// Takes an optional Uint8Array key
+function Blake2b (outlen, key, salt, personal) {
+  // zero out parameter_block before usage
+  parameter_block.fill(0)
+  // state, 'param block'
+
+  this.b = new Uint8Array(128)
+  this.h = new Uint32Array(16)
+  this.t = 0 // input count
+  this.c = 0 // pointer within buffer
+  this.outlen = outlen // output length in bytes
+
+  parameter_block[0] = outlen
+  if (key) parameter_block[1] = key.length
+  parameter_block[2] = 1 // fanout
+  parameter_block[3] = 1 // depth
+
+  if (salt) parameter_block.set(salt, 32)
+  if (personal) parameter_block.set(personal, 48)
+
+  // initialize hash state
+  for (var i = 0; i < 16; i++) {
+    this.h[i] = BLAKE2B_IV32[i] ^ B2B_GET32(parameter_block, i * 4)
+  }
+
+  // key the hash, if applicable
+  if (key) {
+    blake2bUpdate(this, key)
+    // at the end
+    this.c = 128
+  }
+}
+
+Blake2b.prototype.update = function (input) {
+  assert(input != null, 'input must be Uint8Array or Buffer')
+  blake2bUpdate(this, input)
+  return this
+}
+
+Blake2b.prototype.digest = function (out) {
+  var buf = (!out || out === 'binary' || out === 'hex') ? new Uint8Array(this.outlen) : out
+  assert(buf.length >= this.outlen, 'out must have at least outlen bytes of space')
+  blake2bFinal(this, buf)
+  if (out === 'hex') return hexSlice(buf)
+  return buf
+}
+
+Blake2b.prototype.final = Blake2b.prototype.digest
+
+Blake2b.ready = function (cb) {
+  b2wasm.ready(function () {
+    cb() // ignore the error
+  })
+}
+
+// Updates a BLAKE2b streaming hash
+// Requires hash context and Uint8Array (byte array)
+function blake2bUpdate (ctx, input) {
+  for (var i = 0; i < input.length; i++) {
+    if (ctx.c === 128) { // buffer full ?
+      ctx.t += ctx.c // add counters
+      blake2bCompress(ctx, false) // compress (not last)
+      ctx.c = 0 // counter to zero
+    }
+    ctx.b[ctx.c++] = input[i]
+  }
+}
+
+// Completes a BLAKE2b streaming hash
+// Returns a Uint8Array containing the message digest
+function blake2bFinal (ctx, out) {
+  ctx.t += ctx.c // mark last block offset
+
+  while (ctx.c < 128) { // fill up with zeros
+    ctx.b[ctx.c++] = 0
+  }
+  blake2bCompress(ctx, true) // final block flag = 1
+
+  for (var i = 0; i < ctx.outlen; i++) {
+    out[i] = ctx.h[i >> 2] >> (8 * (i & 3))
+  }
+  return out
+}
+
+function hexSlice (buf) {
+  var str = ''
+  for (var i = 0; i < buf.length; i++) str += toHex(buf[i])
+  return str
+}
+
+function toHex (n) {
+  if (n < 16) return '0' + n.toString(16)
+  return n.toString(16)
+}
+
+var Proto = Blake2b
+
+module.exports = function createHash (outlen, key, salt, personal, noAssert) {
+  if (noAssert !== true) {
+    assert(outlen >= BYTES_MIN, 'outlen must be at least ' + BYTES_MIN + ', was given ' + outlen)
+    assert(outlen <= BYTES_MAX, 'outlen must be at most ' + BYTES_MAX + ', was given ' + outlen)
+    if (key != null) assert(key.length >= KEYBYTES_MIN, 'key must be at least ' + KEYBYTES_MIN + ', was given ' + key.length)
+    if (key != null) assert(key.length <= KEYBYTES_MAX, 'key must be at most ' + KEYBYTES_MAX + ', was given ' + key.length)
+    if (salt != null) assert(salt.length === SALTBYTES, 'salt must be exactly ' + SALTBYTES + ', was given ' + salt.length)
+    if (personal != null) assert(personal.length === PERSONALBYTES, 'personal must be exactly ' + PERSONALBYTES + ', was given ' + personal.length)
+  }
+
+  return new Proto(outlen, key, salt, personal)
+}
+
+module.exports.ready = function (cb) {
+  b2wasm.ready(function () { // ignore errors
+    cb()
+  })
+}
+
+module.exports.WASM_SUPPORTED = b2wasm.SUPPORTED
+module.exports.WASM_LOADED = false
+
+var BYTES_MIN = module.exports.BYTES_MIN = 16
+var BYTES_MAX = module.exports.BYTES_MAX = 64
+var BYTES = module.exports.BYTES = 32
+var KEYBYTES_MIN = module.exports.KEYBYTES_MIN = 16
+var KEYBYTES_MAX = module.exports.KEYBYTES_MAX = 64
+var KEYBYTES = module.exports.KEYBYTES = 32
+var SALTBYTES = module.exports.SALTBYTES = 16
+var PERSONALBYTES = module.exports.PERSONALBYTES = 16
+
+b2wasm.ready(function (err) {
+  if (!err) {
+    module.exports.WASM_LOADED = true
+    Proto = b2wasm
+  }
+})
+
+},{"blake2b-wasm":213,"nanoassert":253}],215:[function(require,module,exports){
 arguments[4][20][0].apply(exports,arguments)
-},{"buffer":22,"dup":20}],211:[function(require,module,exports){
+},{"buffer":22,"dup":20}],216:[function(require,module,exports){
 arguments[4][21][0].apply(exports,arguments)
-},{"crypto":22,"dup":21}],212:[function(require,module,exports){
+},{"crypto":22,"dup":21}],217:[function(require,module,exports){
 var basex = require('base-x')
 var ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 module.exports = basex(ALPHABET)
 
-},{"base-x":209}],213:[function(require,module,exports){
+},{"base-x":211}],218:[function(require,module,exports){
 module.exports = function(a, b) {
   if (typeof a.compare === 'function') return a.compare(b)
   if (a === b) return 0
@@ -37442,11 +38008,11 @@ module.exports = function(a, b) {
 }
 
 
-},{}],214:[function(require,module,exports){
+},{}],219:[function(require,module,exports){
 arguments[4][71][0].apply(exports,arguments)
-},{"../package.json":229,"./elliptic/curve":217,"./elliptic/curves":220,"./elliptic/ec":221,"./elliptic/eddsa":224,"./elliptic/utils":228,"brorand":211,"dup":71}],215:[function(require,module,exports){
+},{"../package.json":234,"./elliptic/curve":222,"./elliptic/curves":225,"./elliptic/ec":226,"./elliptic/eddsa":229,"./elliptic/utils":233,"brorand":216,"dup":71}],220:[function(require,module,exports){
 arguments[4][72][0].apply(exports,arguments)
-},{"../../elliptic":214,"bn.js":210,"dup":72}],216:[function(require,module,exports){
+},{"../../elliptic":219,"bn.js":215,"dup":72}],221:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -37881,11 +38447,11 @@ Point.prototype.eqXToP = function eqXToP(x) {
 Point.prototype.toP = Point.prototype.normalize;
 Point.prototype.mixedAdd = Point.prototype.add;
 
-},{"../../elliptic":214,"../curve":217,"bn.js":210,"inherits":244}],217:[function(require,module,exports){
+},{"../../elliptic":219,"../curve":222,"bn.js":215,"inherits":249}],222:[function(require,module,exports){
 arguments[4][74][0].apply(exports,arguments)
-},{"./base":215,"./edwards":216,"./mont":218,"./short":219,"dup":74}],218:[function(require,module,exports){
+},{"./base":220,"./edwards":221,"./mont":223,"./short":224,"dup":74}],223:[function(require,module,exports){
 arguments[4][75][0].apply(exports,arguments)
-},{"../../elliptic":214,"../curve":217,"bn.js":210,"dup":75,"inherits":244}],219:[function(require,module,exports){
+},{"../../elliptic":219,"../curve":222,"bn.js":215,"dup":75,"inherits":249}],224:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -38825,25 +39391,25 @@ JPoint.prototype.isInfinity = function isInfinity() {
   return this.z.cmpn(0) === 0;
 };
 
-},{"../../elliptic":214,"../curve":217,"bn.js":210,"inherits":244}],220:[function(require,module,exports){
+},{"../../elliptic":219,"../curve":222,"bn.js":215,"inherits":249}],225:[function(require,module,exports){
 arguments[4][77][0].apply(exports,arguments)
-},{"../elliptic":214,"./precomputed/secp256k1":227,"dup":77,"hash.js":230}],221:[function(require,module,exports){
+},{"../elliptic":219,"./precomputed/secp256k1":232,"dup":77,"hash.js":235}],226:[function(require,module,exports){
 arguments[4][78][0].apply(exports,arguments)
-},{"../../elliptic":214,"./key":222,"./signature":223,"bn.js":210,"dup":78,"hmac-drbg":243}],222:[function(require,module,exports){
+},{"../../elliptic":219,"./key":227,"./signature":228,"bn.js":215,"dup":78,"hmac-drbg":248}],227:[function(require,module,exports){
 arguments[4][79][0].apply(exports,arguments)
-},{"../../elliptic":214,"bn.js":210,"dup":79}],223:[function(require,module,exports){
+},{"../../elliptic":219,"bn.js":215,"dup":79}],228:[function(require,module,exports){
 arguments[4][80][0].apply(exports,arguments)
-},{"../../elliptic":214,"bn.js":210,"dup":80}],224:[function(require,module,exports){
+},{"../../elliptic":219,"bn.js":215,"dup":80}],229:[function(require,module,exports){
 arguments[4][81][0].apply(exports,arguments)
-},{"../../elliptic":214,"./key":225,"./signature":226,"dup":81,"hash.js":230}],225:[function(require,module,exports){
+},{"../../elliptic":219,"./key":230,"./signature":231,"dup":81,"hash.js":235}],230:[function(require,module,exports){
 arguments[4][82][0].apply(exports,arguments)
-},{"../../elliptic":214,"dup":82}],226:[function(require,module,exports){
+},{"../../elliptic":219,"dup":82}],231:[function(require,module,exports){
 arguments[4][83][0].apply(exports,arguments)
-},{"../../elliptic":214,"bn.js":210,"dup":83}],227:[function(require,module,exports){
+},{"../../elliptic":219,"bn.js":215,"dup":83}],232:[function(require,module,exports){
 arguments[4][84][0].apply(exports,arguments)
-},{"dup":84}],228:[function(require,module,exports){
+},{"dup":84}],233:[function(require,module,exports){
 arguments[4][85][0].apply(exports,arguments)
-},{"bn.js":210,"dup":85,"minimalistic-assert":246,"minimalistic-crypto-utils":247}],229:[function(require,module,exports){
+},{"bn.js":215,"dup":85,"minimalistic-assert":251,"minimalistic-crypto-utils":252}],234:[function(require,module,exports){
 module.exports={
   "_from": "elliptic@=6.4.0",
   "_id": "elliptic@6.4.0",
@@ -38862,14 +39428,12 @@ module.exports={
     "fetchSpec": "=6.4.0"
   },
   "_requiredBy": [
-    "/",
-    "/browserify-sign",
-    "/create-ecdh"
+    "/"
   ],
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.0.tgz",
   "_shasum": "cac9af8762c85836187003c8dfe193e5e2eae5df",
   "_spec": "elliptic@=6.4.0",
-  "_where": "/Users/micah/dev/bitcore/packages/ltzcore-lib",
+  "_where": "/home/litecoinz/ltzcore/packages/ltzcore-lib",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -38933,315 +39497,37 @@ module.exports={
   "version": "6.4.0"
 }
 
-},{}],230:[function(require,module,exports){
+},{}],235:[function(require,module,exports){
 arguments[4][90][0].apply(exports,arguments)
-},{"./hash/common":231,"./hash/hmac":232,"./hash/ripemd":233,"./hash/sha":234,"./hash/utils":241,"dup":90}],231:[function(require,module,exports){
+},{"./hash/common":236,"./hash/hmac":237,"./hash/ripemd":238,"./hash/sha":239,"./hash/utils":246,"dup":90}],236:[function(require,module,exports){
 arguments[4][91][0].apply(exports,arguments)
-},{"./utils":241,"dup":91,"minimalistic-assert":246}],232:[function(require,module,exports){
+},{"./utils":246,"dup":91,"minimalistic-assert":251}],237:[function(require,module,exports){
 arguments[4][92][0].apply(exports,arguments)
-},{"./utils":241,"dup":92,"minimalistic-assert":246}],233:[function(require,module,exports){
+},{"./utils":246,"dup":92,"minimalistic-assert":251}],238:[function(require,module,exports){
 arguments[4][93][0].apply(exports,arguments)
-},{"./common":231,"./utils":241,"dup":93}],234:[function(require,module,exports){
+},{"./common":236,"./utils":246,"dup":93}],239:[function(require,module,exports){
 arguments[4][94][0].apply(exports,arguments)
-},{"./sha/1":235,"./sha/224":236,"./sha/256":237,"./sha/384":238,"./sha/512":239,"dup":94}],235:[function(require,module,exports){
+},{"./sha/1":240,"./sha/224":241,"./sha/256":242,"./sha/384":243,"./sha/512":244,"dup":94}],240:[function(require,module,exports){
 arguments[4][95][0].apply(exports,arguments)
-},{"../common":231,"../utils":241,"./common":240,"dup":95}],236:[function(require,module,exports){
+},{"../common":236,"../utils":246,"./common":245,"dup":95}],241:[function(require,module,exports){
 arguments[4][96][0].apply(exports,arguments)
-},{"../utils":241,"./256":237,"dup":96}],237:[function(require,module,exports){
+},{"../utils":246,"./256":242,"dup":96}],242:[function(require,module,exports){
 arguments[4][97][0].apply(exports,arguments)
-},{"../common":231,"../utils":241,"./common":240,"dup":97,"minimalistic-assert":246}],238:[function(require,module,exports){
+},{"../common":236,"../utils":246,"./common":245,"dup":97,"minimalistic-assert":251}],243:[function(require,module,exports){
 arguments[4][98][0].apply(exports,arguments)
-},{"../utils":241,"./512":239,"dup":98}],239:[function(require,module,exports){
+},{"../utils":246,"./512":244,"dup":98}],244:[function(require,module,exports){
 arguments[4][99][0].apply(exports,arguments)
-},{"../common":231,"../utils":241,"dup":99,"minimalistic-assert":246}],240:[function(require,module,exports){
+},{"../common":236,"../utils":246,"dup":99,"minimalistic-assert":251}],245:[function(require,module,exports){
 arguments[4][100][0].apply(exports,arguments)
-},{"../utils":241,"dup":100}],241:[function(require,module,exports){
-'use strict';
-
-var assert = require('minimalistic-assert');
-var inherits = require('inherits');
-
-exports.inherits = inherits;
-
-function isSurrogatePair(msg, i) {
-  if ((msg.charCodeAt(i) & 0xFC00) !== 0xD800) {
-    return false;
-  }
-  if (i < 0 || i + 1 >= msg.length) {
-    return false;
-  }
-  return (msg.charCodeAt(i + 1) & 0xFC00) === 0xDC00;
-}
-
-function toArray(msg, enc) {
-  if (Array.isArray(msg))
-    return msg.slice();
-  if (!msg)
-    return [];
-  var res = [];
-  if (typeof msg === 'string') {
-    if (!enc) {
-      // Inspired by stringToUtf8ByteArray() in closure-library by Google
-      // https://github.com/google/closure-library/blob/8598d87242af59aac233270742c8984e2b2bdbe0/closure/goog/crypt/crypt.js#L117-L143
-      // Apache License 2.0
-      // https://github.com/google/closure-library/blob/master/LICENSE
-      var p = 0;
-      for (var i = 0; i < msg.length; i++) {
-        var c = msg.charCodeAt(i);
-        if (c < 128) {
-          res[p++] = c;
-        } else if (c < 2048) {
-          res[p++] = (c >> 6) | 192;
-          res[p++] = (c & 63) | 128;
-        } else if (isSurrogatePair(msg, i)) {
-          c = 0x10000 + ((c & 0x03FF) << 10) + (msg.charCodeAt(++i) & 0x03FF);
-          res[p++] = (c >> 18) | 240;
-          res[p++] = ((c >> 12) & 63) | 128;
-          res[p++] = ((c >> 6) & 63) | 128;
-          res[p++] = (c & 63) | 128;
-        } else {
-          res[p++] = (c >> 12) | 224;
-          res[p++] = ((c >> 6) & 63) | 128;
-          res[p++] = (c & 63) | 128;
-        }
-      }
-    } else if (enc === 'hex') {
-      msg = msg.replace(/[^a-z0-9]+/ig, '');
-      if (msg.length % 2 !== 0)
-        msg = '0' + msg;
-      for (i = 0; i < msg.length; i += 2)
-        res.push(parseInt(msg[i] + msg[i + 1], 16));
-    }
-  } else {
-    for (i = 0; i < msg.length; i++)
-      res[i] = msg[i] | 0;
-  }
-  return res;
-}
-exports.toArray = toArray;
-
-function toHex(msg) {
-  var res = '';
-  for (var i = 0; i < msg.length; i++)
-    res += zero2(msg[i].toString(16));
-  return res;
-}
-exports.toHex = toHex;
-
-function htonl(w) {
-  var res = (w >>> 24) |
-            ((w >>> 8) & 0xff00) |
-            ((w << 8) & 0xff0000) |
-            ((w & 0xff) << 24);
-  return res >>> 0;
-}
-exports.htonl = htonl;
-
-function toHex32(msg, endian) {
-  var res = '';
-  for (var i = 0; i < msg.length; i++) {
-    var w = msg[i];
-    if (endian === 'little')
-      w = htonl(w);
-    res += zero8(w.toString(16));
-  }
-  return res;
-}
-exports.toHex32 = toHex32;
-
-function zero2(word) {
-  if (word.length === 1)
-    return '0' + word;
-  else
-    return word;
-}
-exports.zero2 = zero2;
-
-function zero8(word) {
-  if (word.length === 7)
-    return '0' + word;
-  else if (word.length === 6)
-    return '00' + word;
-  else if (word.length === 5)
-    return '000' + word;
-  else if (word.length === 4)
-    return '0000' + word;
-  else if (word.length === 3)
-    return '00000' + word;
-  else if (word.length === 2)
-    return '000000' + word;
-  else if (word.length === 1)
-    return '0000000' + word;
-  else
-    return word;
-}
-exports.zero8 = zero8;
-
-function join32(msg, start, end, endian) {
-  var len = end - start;
-  assert(len % 4 === 0);
-  var res = new Array(len / 4);
-  for (var i = 0, k = start; i < res.length; i++, k += 4) {
-    var w;
-    if (endian === 'big')
-      w = (msg[k] << 24) | (msg[k + 1] << 16) | (msg[k + 2] << 8) | msg[k + 3];
-    else
-      w = (msg[k + 3] << 24) | (msg[k + 2] << 16) | (msg[k + 1] << 8) | msg[k];
-    res[i] = w >>> 0;
-  }
-  return res;
-}
-exports.join32 = join32;
-
-function split32(msg, endian) {
-  var res = new Array(msg.length * 4);
-  for (var i = 0, k = 0; i < msg.length; i++, k += 4) {
-    var m = msg[i];
-    if (endian === 'big') {
-      res[k] = m >>> 24;
-      res[k + 1] = (m >>> 16) & 0xff;
-      res[k + 2] = (m >>> 8) & 0xff;
-      res[k + 3] = m & 0xff;
-    } else {
-      res[k + 3] = m >>> 24;
-      res[k + 2] = (m >>> 16) & 0xff;
-      res[k + 1] = (m >>> 8) & 0xff;
-      res[k] = m & 0xff;
-    }
-  }
-  return res;
-}
-exports.split32 = split32;
-
-function rotr32(w, b) {
-  return (w >>> b) | (w << (32 - b));
-}
-exports.rotr32 = rotr32;
-
-function rotl32(w, b) {
-  return (w << b) | (w >>> (32 - b));
-}
-exports.rotl32 = rotl32;
-
-function sum32(a, b) {
-  return (a + b) >>> 0;
-}
-exports.sum32 = sum32;
-
-function sum32_3(a, b, c) {
-  return (a + b + c) >>> 0;
-}
-exports.sum32_3 = sum32_3;
-
-function sum32_4(a, b, c, d) {
-  return (a + b + c + d) >>> 0;
-}
-exports.sum32_4 = sum32_4;
-
-function sum32_5(a, b, c, d, e) {
-  return (a + b + c + d + e) >>> 0;
-}
-exports.sum32_5 = sum32_5;
-
-function sum64(buf, pos, ah, al) {
-  var bh = buf[pos];
-  var bl = buf[pos + 1];
-
-  var lo = (al + bl) >>> 0;
-  var hi = (lo < al ? 1 : 0) + ah + bh;
-  buf[pos] = hi >>> 0;
-  buf[pos + 1] = lo;
-}
-exports.sum64 = sum64;
-
-function sum64_hi(ah, al, bh, bl) {
-  var lo = (al + bl) >>> 0;
-  var hi = (lo < al ? 1 : 0) + ah + bh;
-  return hi >>> 0;
-}
-exports.sum64_hi = sum64_hi;
-
-function sum64_lo(ah, al, bh, bl) {
-  var lo = al + bl;
-  return lo >>> 0;
-}
-exports.sum64_lo = sum64_lo;
-
-function sum64_4_hi(ah, al, bh, bl, ch, cl, dh, dl) {
-  var carry = 0;
-  var lo = al;
-  lo = (lo + bl) >>> 0;
-  carry += lo < al ? 1 : 0;
-  lo = (lo + cl) >>> 0;
-  carry += lo < cl ? 1 : 0;
-  lo = (lo + dl) >>> 0;
-  carry += lo < dl ? 1 : 0;
-
-  var hi = ah + bh + ch + dh + carry;
-  return hi >>> 0;
-}
-exports.sum64_4_hi = sum64_4_hi;
-
-function sum64_4_lo(ah, al, bh, bl, ch, cl, dh, dl) {
-  var lo = al + bl + cl + dl;
-  return lo >>> 0;
-}
-exports.sum64_4_lo = sum64_4_lo;
-
-function sum64_5_hi(ah, al, bh, bl, ch, cl, dh, dl, eh, el) {
-  var carry = 0;
-  var lo = al;
-  lo = (lo + bl) >>> 0;
-  carry += lo < al ? 1 : 0;
-  lo = (lo + cl) >>> 0;
-  carry += lo < cl ? 1 : 0;
-  lo = (lo + dl) >>> 0;
-  carry += lo < dl ? 1 : 0;
-  lo = (lo + el) >>> 0;
-  carry += lo < el ? 1 : 0;
-
-  var hi = ah + bh + ch + dh + eh + carry;
-  return hi >>> 0;
-}
-exports.sum64_5_hi = sum64_5_hi;
-
-function sum64_5_lo(ah, al, bh, bl, ch, cl, dh, dl, eh, el) {
-  var lo = al + bl + cl + dl + el;
-
-  return lo >>> 0;
-}
-exports.sum64_5_lo = sum64_5_lo;
-
-function rotr64_hi(ah, al, num) {
-  var r = (al << (32 - num)) | (ah >>> num);
-  return r >>> 0;
-}
-exports.rotr64_hi = rotr64_hi;
-
-function rotr64_lo(ah, al, num) {
-  var r = (ah << (32 - num)) | (al >>> num);
-  return r >>> 0;
-}
-exports.rotr64_lo = rotr64_lo;
-
-function shr64_hi(ah, al, num) {
-  return ah >>> num;
-}
-exports.shr64_hi = shr64_hi;
-
-function shr64_lo(ah, al, num) {
-  var r = (ah << (32 - num)) | (al >>> num);
-  return r >>> 0;
-}
-exports.shr64_lo = shr64_lo;
-
-},{"inherits":242,"minimalistic-assert":246}],242:[function(require,module,exports){
+},{"../utils":246,"dup":100}],246:[function(require,module,exports){
+arguments[4][101][0].apply(exports,arguments)
+},{"dup":101,"inherits":247,"minimalistic-assert":251}],247:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],243:[function(require,module,exports){
+},{"dup":16}],248:[function(require,module,exports){
 arguments[4][102][0].apply(exports,arguments)
-},{"dup":102,"hash.js":230,"minimalistic-assert":246,"minimalistic-crypto-utils":247}],244:[function(require,module,exports){
+},{"dup":102,"hash.js":235,"minimalistic-assert":251,"minimalistic-crypto-utils":252}],249:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],245:[function(require,module,exports){
+},{"dup":16}],250:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -56352,17 +56638,41 @@ arguments[4][16][0].apply(exports,arguments)
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],246:[function(require,module,exports){
+},{}],251:[function(require,module,exports){
 arguments[4][109][0].apply(exports,arguments)
-},{"dup":109}],247:[function(require,module,exports){
+},{"dup":109}],252:[function(require,module,exports){
 arguments[4][110][0].apply(exports,arguments)
-},{"dup":110}],248:[function(require,module,exports){
+},{"dup":110}],253:[function(require,module,exports){
+assert.notEqual = notEqual
+assert.notOk = notOk
+assert.equal = equal
+assert.ok = assert
+
+module.exports = assert
+
+function equal (a, b, m) {
+  assert(a == b, m) // eslint-disable-line eqeqeq
+}
+
+function notEqual (a, b, m) {
+  assert(a != b, m) // eslint-disable-line eqeqeq
+}
+
+function notOk (t, m) {
+  assert(!t, m)
+}
+
+function assert (t, m) {
+  if (!t) throw new Error(m || 'AssertionError')
+}
+
+},{}],254:[function(require,module,exports){
 arguments[4][148][0].apply(exports,arguments)
-},{"buffer":52,"dup":148}],249:[function(require,module,exports){
+},{"buffer":52,"dup":148}],255:[function(require,module,exports){
 module.exports={
   "name": "ltzcore-lib",
   "version": "8.0.0",
-  "description": "A pure and powerful JavaScript Bitcoin library.",
+  "description": "A pure and powerful JavaScript LitecoinZ library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -56373,7 +56683,8 @@ module.exports={
     "build": "gulp"
   },
   "keywords": [
-    "bitcoin",
+    "litecoinz",
+    "ltzcore",
     "transaction",
     "address",
     "p2p",
@@ -56390,12 +56701,13 @@ module.exports={
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/ltzcore-lib.git"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-lib.git"
   },
   "browser": {
     "request": "browser-request"
   },
   "dependencies": {
+    "blake2b": "https://github.com/BitGo/blake2b.git",
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
@@ -56459,7 +56771,7 @@ bitcore.util.preconditions = require('./lib/util/preconditions');
 // errors thrown by the library
 bitcore.errors = require('./lib/errors');
 
-// main bitcoin library
+// main litecoinz library
 bitcore.Address = require('./lib/address');
 bitcore.Block = require('./lib/block');
 bitcore.MerkleBlock = require('./lib/block/merkleblock');
@@ -56487,4 +56799,4 @@ bitcore.deps._ = require('lodash');
 bitcore.Transaction.sighash = require('./lib/transaction/sighash');
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
-},{"./lib/address":164,"./lib/block":167,"./lib/block/blockheader":166,"./lib/block/merkleblock":168,"./lib/crypto/bn":169,"./lib/crypto/ecdsa":170,"./lib/crypto/hash":171,"./lib/crypto/point":172,"./lib/crypto/random":173,"./lib/crypto/signature":174,"./lib/encoding/base58":175,"./lib/encoding/base58check":176,"./lib/encoding/bufferreader":177,"./lib/encoding/bufferwriter":178,"./lib/encoding/varint":179,"./lib/errors":180,"./lib/hdprivatekey.js":182,"./lib/hdpublickey.js":183,"./lib/networks":184,"./lib/opcode":185,"./lib/privatekey":186,"./lib/publickey":187,"./lib/script":188,"./lib/transaction":191,"./lib/transaction/sighash":199,"./lib/unit":204,"./lib/uri":205,"./lib/util/buffer":206,"./lib/util/js":207,"./lib/util/preconditions":208,"./package.json":249,"bn.js":210,"bs58":212,"buffer":52,"elliptic":214,"lodash":245}]},{},[]);
+},{"./lib/address":164,"./lib/block":167,"./lib/block/blockheader":166,"./lib/block/merkleblock":168,"./lib/crypto/bn":169,"./lib/crypto/ecdsa":170,"./lib/crypto/hash":171,"./lib/crypto/point":172,"./lib/crypto/random":173,"./lib/crypto/signature":174,"./lib/encoding/base58":175,"./lib/encoding/base58check":176,"./lib/encoding/bufferreader":177,"./lib/encoding/bufferwriter":178,"./lib/encoding/varint":179,"./lib/errors":180,"./lib/hdprivatekey.js":182,"./lib/hdpublickey.js":183,"./lib/networks":184,"./lib/opcode":185,"./lib/privatekey":186,"./lib/publickey":187,"./lib/script":188,"./lib/transaction":191,"./lib/transaction/sighash":201,"./lib/unit":206,"./lib/uri":207,"./lib/util/buffer":208,"./lib/util/js":209,"./lib/util/preconditions":210,"./package.json":255,"bn.js":215,"bs58":217,"buffer":52,"elliptic":219,"lodash":250}]},{},[]);

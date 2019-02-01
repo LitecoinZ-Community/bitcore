@@ -11,12 +11,12 @@ var fs = require('fs');
 var should = chai.should();
 var Transaction = bitcore.Transaction;
 
-// https://test-insight.bitpay.com/block/000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11
+// https://test-insight.litecoinz.org/block/000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11
 var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
 var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
 var dataJson = fs.readFileSync('test/data/blk86756-testnet.json').toString();
 var data = require('../data/blk86756-testnet');
-var dataBlocks = require('../data/bitcoind/blocks');
+var dataBlocks = require('../data/litecoinzd/blocks');
 
 describe('Block', function() {
   var blockhex;

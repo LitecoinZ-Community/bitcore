@@ -83,6 +83,14 @@ BufferWriter.prototype.writeUInt32LE = function(n) {
   return this;
 };
 
+BufferWriter.prototype.writeUInt64LE = function(n) {
+  var buf = Buffer.alloc(8);
+  buf.writeInt32LE(n & -1, 0);
+  buf.writeUInt32LE(Math.floor(n / 0x100000000), 4);
+  this.write(buf);
+  return this;
+};
+
 BufferWriter.prototype.writeUInt64BEBN = function(bn) {
   var buf = bn.toBuffer({size: 8});
   this.write(buf);

@@ -1,7 +1,7 @@
 {
   "name": "ltzcore-lib",
   "version": "8.0.0",
-  "description": "A pure and powerful JavaScript Bitcoin library.",
+  "description": "A pure and powerful JavaScript LitecoinZ library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,8 @@
     "build": "gulp"
   },
   "keywords": [
-    "bitcoin",
+    "litecoinz",
+    "ltzcore",
     "transaction",
     "address",
     "p2p",
@@ -29,12 +30,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/ltzcore-lib.git"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore-lib.git"
   },
   "browser": {
     "request": "browser-request"
   },
   "dependencies": {
+    "blake2b": "https://github.com/BitGo/blake2b.git",
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",

@@ -41,7 +41,7 @@ bitcore.util.preconditions = require('./lib/util/preconditions');
 // errors thrown by the library
 bitcore.errors = require('./lib/errors');
 
-// main bitcoin library
+// main litecoinz library
 bitcore.Address = require('./lib/address');
 bitcore.Block = require('./lib/block');
 bitcore.MerkleBlock = require('./lib/block/merkleblock');

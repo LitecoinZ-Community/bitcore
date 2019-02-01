@@ -192,7 +192,7 @@ Signature.prototype.toString = function() {
 };
 
 /**
- * This function is translated from bitcoind's IsDERSignature and is used in
+ * This function is translated from litecoinzd's IsDERSignature and is used in
  * the script interpreter.  This "DER" format actually includes an extra byte,
  * the nhashtype, at the end. It is really the tx format, not DER format.
  *
@@ -270,7 +270,7 @@ Signature.isTxDER = function(buf) {
 };
 
 /**
- * Compares to bitcoind's IsLowDERSignature
+ * Compares to litecoinzd's IsLowDERSignature
  * See also ECDSA signature algorithm which enforces this.
  * See also BIP 62, "low S values in signatures"
  */
@@ -284,7 +284,7 @@ Signature.prototype.hasLowS = function() {
 
 /**
  * @returns true if the nhashtype is exactly equal to one of the standard options or combinations thereof.
- * Translated from bitcoind's IsDefinedHashtypeSignature
+ * Translated from litecoinzd's IsDefinedHashtypeSignature
  */
 Signature.prototype.hasDefinedHashtype = function() {
   if (!JSUtil.isNaturalNumber(this.nhashtype)) {

@@ -12,8 +12,8 @@ var Address = bitcore.Address;
 var Script = bitcore.Script;
 var Networks = bitcore.Networks;
 
-var validbase58 = require('./data/bitcoind/base58_keys_valid.json');
-var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
+var validbase58 = require('./data/litecoinzd/base58_keys_valid.json');
+var invalidbase58 = require('./data/litecoinzd/base58_keys_invalid.json');
 
 describe('Address', function() {
 
@@ -39,7 +39,7 @@ describe('Address', function() {
     }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
   });
 
-  describe('bitcoind compliance', function() {
+  describe('litecoinzd compliance', function() {
     validbase58.map(function(d) {
       if (!d[2].isPrivkey) {
         it('should describe address ' + d[0] + ' as valid', function() {

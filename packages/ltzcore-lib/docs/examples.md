@@ -1,4 +1,4 @@
-# Bitcore examples
+# Ltzcore examples
 
 ## Generate a random address
 ```javascript
@@ -40,7 +40,7 @@ var transaction = new bitcore.Transaction()
   .sign(privateKey);
 ```
 
-## Sign a Bitcoin message
+## Sign a LitecoinZ message
 ```javascript
 var Message = require('bitcore-message');
 
@@ -50,7 +50,7 @@ var message = new Message('This is an example of a signed message.');
 var signature = message.sign(privateKey);
 ```
 
-## Verify a Bitcoin message
+## Verify a LitecoinZ message
 ```javascript
 var Message = require('bitcore-message');
 
@@ -73,7 +73,7 @@ var utxo = {
 
 var transaction = new bitcore.Transaction()
     .from(utxo)
-    .addData('bitcore rocks') // Add OP_RETURN data
+    .addData('ltzcore-lib rocks') // Add OP_RETURN data
     .sign(privateKey);
 ```
 

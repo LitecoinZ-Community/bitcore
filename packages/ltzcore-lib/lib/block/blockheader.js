@@ -9,7 +9,7 @@ var Hash = require('../crypto/hash');
 var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
 
-var GENESIS_BITS = 0x1d00ffff;
+var GENESIS_BITS = 0x1f07ffff;
 
 /**
  * Instantiate a BlockHeader from a Buffer, JSON object, or Object with
@@ -27,10 +27,12 @@ var BlockHeader = function BlockHeader(arg) {
   this.version = info.version;
   this.prevHash = info.prevHash;
   this.merkleRoot = info.merkleRoot;
+  this.reserved = info.reserved;
   this.time = info.time;
   this.timestamp = info.time;
   this.bits = info.bits;
   this.nonce = info.nonce;
+  this.solution = info.solution;
 
   if (info.hash) {
     $.checkState(
@@ -69,21 +71,37 @@ BlockHeader._fromObject = function _fromObject(data) {
   $.checkArgument(data, 'data is required');
   var prevHash = data.prevHash;
   var merkleRoot = data.merkleRoot;
+  var reserved = data.reserved;
+  var nonce = data.nonce;
+  var solution = data.solution;
+
   if (_.isString(data.prevHash)) {
     prevHash = BufferUtil.reverse(Buffer.from(data.prevHash, 'hex'));
   }
   if (_.isString(data.merkleRoot)) {
     merkleRoot = BufferUtil.reverse(Buffer.from(data.merkleRoot, 'hex'));
   }
+  if (_.isString(data.reserved)) {
+    reserved = BufferUtil.reverse(Buffer.from(data.reserved, 'hex'));
+  }
+  if (_.isString(data.nonce)) {
+    nonce = BufferUtil.reverse(Buffer.from(data.nonce, 'hex'));
+  }
+  if (_.isString(data.solution)) {
+    solution = Buffer.from(data.solution, 'hex');
+  }
+
   var info = {
     hash: data.hash,
     version: data.version,
     prevHash: prevHash,
     merkleRoot: merkleRoot,
+    reserved: reserved,
     time: data.time,
     timestamp: data.time,
     bits: data.bits,
-    nonce: data.nonce
+    nonce: nonce,
+    solution: solution
   };
   return info;
 };
@@ -139,9 +157,12 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
   info.version = br.readInt32LE();
   info.prevHash = br.read(32);
   info.merkleRoot = br.read(32);
+  info.reserved = br.read(32);
   info.time = br.readUInt32LE();
   info.bits = br.readUInt32LE();
-  info.nonce = br.readUInt32LE();
+  info.nonce = br.read(32);
+  var lenSolution = br.readVarintNum();
+  info.solution = br.read(lenSolution);
   return info;
 };
 
@@ -163,9 +184,11 @@ BlockHeader.prototype.toObject = BlockHeader.prototype.toJSON = function toObjec
     version: this.version,
     prevHash: BufferUtil.reverse(this.prevHash).toString('hex'),
     merkleRoot: BufferUtil.reverse(this.merkleRoot).toString('hex'),
+    reserved: BufferUtil.reverse(this.reserved).toString('hex'),
     time: this.time,
     bits: this.bits,
-    nonce: this.nonce
+    nonce: BufferUtil.reverse(this.nonce).toString('hex'),
+    solution: this.solution.toString('hex')
   };
 };
 
@@ -194,9 +217,12 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
   bw.writeInt32LE(this.version);
   bw.write(this.prevHash);
   bw.write(this.merkleRoot);
+  bw.write(this.reserved);
   bw.writeUInt32LE(this.time);
   bw.writeUInt32LE(this.bits);
-  bw.writeUInt32LE(this.nonce);
+  bw.write(this.nonce);
+  bw.writeVarintNum(this.solution.length);
+  bw.write(this.solution);
   return bw;
 };
 

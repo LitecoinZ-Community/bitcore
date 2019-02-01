@@ -1,10 +1,10 @@
-# Bitcore v8.0.0
+# Ltzcore v8.0.0
 
 ## Principles
 
-Bitcoin is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the Bitcoin network allows for highly resilient bitcoin infrastructure, and the developer community needs reliable, open-source tools to implement bitcoin apps and services. Bitcore provides a reliable API for JavaScript apps that need to interface with Bitcoin.
+LitecoinZ is a powerful new peer-to-peer platform for the next generation of financial technology. The decentralized nature of the LitecoinZ network allows for highly resilient litecoinz infrastructure, and the developer community needs reliable, open-source tools to implement litecoinz apps and services. Ltzcore provides a reliable API for JavaScript apps that need to interface with LitecoinZ.
 
-To get started, just `npm install bitcore` or `bower install bitcore`.
+To get started, just `npm install ltzcore-lib` or `bower install ltzcore-lib`.
 
 # Documentation Index
 
@@ -17,10 +17,10 @@ To get started, just `npm install bitcore` or `bower install bitcore`.
 
 ## Payment Handling
 * [Using Different Units](unit.md)
-* [Acknowledging and Requesting Payments: Bitcoin URIs](uri.md)
+* [Acknowledging and Requesting Payments: LitecoinZ URIs](uri.md)
 * [The Transaction Class](transaction.md)
 
-## Bitcoin Internals
+## LitecoinZ Internals
 * [Scripts](script.md)
 * [Block](block.md)
 
@@ -35,11 +35,11 @@ To get started, just `npm install bitcore` or `bower install bitcore`.
 
 Some functionality is implemented as a module that can be installed separately:
 
-* [Payment Protocol Support](https://github.com/bitpay/ltzcore-payment-protocol)
-* [Peer to Peer Networking](https://github.com/bitpay/ltzcore-p2p)
+* [Payment Protocol Support](https://github.com/LitecoinZ-Community/ltzcore-payment-protocol)
+* [Peer to Peer Networking](https://github.com/LitecoinZ-Community/ltzcore-p2p)
 * [Bitcoin Core JSON-RPC](https://github.com/bitpay/bitcoind-rpc)
 * [Payment Channels](https://github.com/bitpay/bitcore-channel)
-* [Mnemonics](https://github.com/bitpay/ltzcore-mnemonic)
+* [Mnemonics](https://github.com/LitecoinZ-Community/ltzcore-mnemonic)
 * [Elliptical Curve Integrated Encryption Scheme](https://github.com/bitpay/bitcore-ecies)
 * [Blockchain Explorers](https://github.com/bitpay/bitcore-explorers)
 * [Signed Messages](https://github.com/bitpay/bitcore-message)

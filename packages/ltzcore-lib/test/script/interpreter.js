@@ -12,12 +12,12 @@ var BufferWriter = bitcore.encoding.BufferWriter;
 var Opcode = bitcore.Opcode;
 var _ = require('lodash');
 
-var script_tests = require('../data/bitcoind/script_tests');
-var tx_valid = require('../data/bitcoind/tx_valid');
-var tx_invalid = require('../data/bitcoind/tx_invalid');
+var script_tests = require('../data/litecoinzd/script_tests');
+var tx_valid = require('../data/litecoinzd/tx_valid');
+var tx_invalid = require('../data/litecoinzd/tx_invalid');
 
-//the script string format used in bitcoind data tests
-Script.fromBitcoindString = function(str) {
+//the script string format used in litecoinzd data tests
+Script.fromLitecoinzdString = function(str) {
   var bw = new BufferWriter();
   var tokens = str.split(' ');
   for (var i = 0; i < tokens.length; i++) {
@@ -327,8 +327,8 @@ describe('Interpreter', function() {
 
   var testFixture = function(vector, expected, witness, amount) {
     var amount = amount || 0;
-    var scriptSig = Script.fromBitcoindString(vector[0]);
-    var scriptPubkey = Script.fromBitcoindString(vector[1]);
+    var scriptSig = Script.fromLitecoinzdString(vector[0]);
+    var scriptPubkey = Script.fromLitecoinzdString(vector[1]);
     var flags = getFlags(vector[2]);
 
     var hashbuf = new Buffer(32);
@@ -362,7 +362,7 @@ describe('Interpreter', function() {
     var verified = interp.verify(scriptSig, scriptPubkey, spendtx, 0, flags, witness, amount);
     verified.should.equal(expected);
   };
-  describe('bitcoind script evaluation fixtures', function() {
+  describe('litecoinzd script evaluation fixtures', function() {
 
     var testAllFixtures = function(set) {
       var c = 0;
@@ -398,7 +398,7 @@ describe('Interpreter', function() {
     testAllFixtures(script_tests);
 
   });
-  describe('bitcoind transaction evaluation fixtures', function() {
+  describe('litecoinzd transaction evaluation fixtures', function() {
     var test_txs = function(set, expected) {
       var c = 0;
       set.forEach(function(vector) {
@@ -418,9 +418,9 @@ describe('Interpreter', function() {
             var txoutnum = input[1];
             var scriptPubKeyStr = input[2];
             if (txoutnum === -1) {
-              txoutnum = 0xffffffff; //bitcoind casts -1 to an unsigned int
+              txoutnum = 0xffffffff; //litecoinzd casts -1 to an unsigned int
             }
-            map[txid + ':' + txoutnum] = Script.fromBitcoindString(scriptPubKeyStr);
+            map[txid + ':' + txoutnum] = Script.fromLitecoinzdString(scriptPubKeyStr);
           });
 
           var tx = new Transaction(txhex);

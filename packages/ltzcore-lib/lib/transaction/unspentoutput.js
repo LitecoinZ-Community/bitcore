@@ -20,8 +20,8 @@ var Unit = require('../unit');
  * @param {number=} data.outputIndex alias for `vout`
  * @param {string|Script} data.scriptPubKey the script that must be resolved to release the funds
  * @param {string|Script=} data.script alias for `scriptPubKey`
- * @param {number} data.amount amount of bitcoins associated
- * @param {number=} data.satoshis alias for `amount`, but expressed in satoshis (1 BTC = 1e8 satoshis)
+ * @param {number} data.amount amount of litecoinzs associated
+ * @param {number=} data.satoshis alias for `amount`, but expressed in satoshis (1 LTZ = 1e8 satoshis)
  * @param {string|Address=} data.address the associated address to the script, if provided
  */
 function UnspentOutput(data) {
@@ -45,8 +45,8 @@ function UnspentOutput(data) {
                   'Must provide the scriptPubKey for that output!');
   var script = new Script(data.scriptPubKey || data.script);
   $.checkArgument(!_.isUndefined(data.amount) || !_.isUndefined(data.satoshis),
-                      'Must provide an amount for the output');
-  var amount = !_.isUndefined(data.amount) ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;
+                  'Must provide an amount for the output');
+  var amount = !_.isUndefined(data.amount) ? new Unit.fromLTZ(data.amount).toSatoshis() : data.satoshis;
   $.checkArgument(_.isNumber(amount), 'Amount must be a number');
   JSUtil.defineImmutable(this, {
     address: address,
@@ -93,7 +93,7 @@ UnspentOutput.prototype.toObject = UnspentOutput.prototype.toJSON = function toO
     txid: this.txId,
     vout: this.outputIndex,
     scriptPubKey: this.script.toBuffer().toString('hex'),
-    amount: Unit.fromSatoshis(this.satoshis).toBTC()
+    amount: Unit.fromSatoshis(this.satoshis).toLTZ()
   };
 };
 

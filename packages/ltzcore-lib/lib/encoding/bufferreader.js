@@ -93,6 +93,12 @@ BufferReader.prototype.readInt32LE = function() {
   return val;
 };
 
+BufferReader.prototype.readUInt64LE = function() {
+  var val = this.buf.readUInt32LE(this.pos) + this.buf.readUInt32LE(this.pos + 4) * 0x100000000
+  this.pos = this.pos + 8;
+  return val;
+};
+
 BufferReader.prototype.readUInt64BEBN = function() {
   var buf = this.buf.slice(this.pos, this.pos + 8);
   var bn = BN.fromBuffer(buf);

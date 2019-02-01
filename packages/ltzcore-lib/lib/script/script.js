@@ -16,7 +16,7 @@ var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
 
 /**
- * A bitcoin transaction script. Each transaction's inputs and outputs
+ * A litecoinz transaction script. Each transaction's inputs and outputs
  * has a script that is evaluated to validate it's spending.
  *
  * See https://en.bitcoin.it/wiki/Script
@@ -405,49 +405,6 @@ Script.prototype.isScriptHashOut = function() {
 };
 
 /**
- * @returns {boolean} if this is a p2wsh output script
- */
-Script.prototype.isWitnessScriptHashOut = function() {
-  var buf = this.toBuffer();
-  return (buf.length === 34 && buf[0] === 0 && buf[1] === 32);
-};
-
-/**
- * @returns {boolean} if this is a p2wpkh output script
- */
-Script.prototype.isWitnessPublicKeyHashOut = function() {
-  var buf = this.toBuffer();
-  return (buf.length === 22 && buf[0] === 0 && buf[1] === 20);
-};
-
-/**
- * @param {Object=} values - The return values
- * @param {Number} values.version - Set with the witness version
- * @param {Buffer} values.program - Set with the witness program
- * @returns {boolean} if this is a p2wpkh output script
- */
-Script.prototype.isWitnessProgram = function(values) {
-  if (!values) {
-    values = {};
-  }
-  var buf = this.toBuffer();
-  if (buf.length < 4 || buf.length > 42) {
-    return false;
-  }
-  if (buf[0] !== Opcode.OP_0 && !(buf[0] >= Opcode.OP_1 && buf[0] <= Opcode.OP_16)) {
-    return false;
-  }
-
-  if (buf.length === buf[1] + 2) {
-    values.version = buf[0];
-    values.program = buf.slice(2, buf.length);
-    return true;
-  }
-
-  return false;
-};
-
-/**
  * @returns {boolean} if this is a p2sh input script
  * Note that these are frequently indistinguishable from pubkeyhashin
  */
@@ -785,17 +742,6 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts) {
   return script;
 };
 
-Script.buildWitnessMultisigOutFromScript = function(script) {
-  if (script instanceof Script) {
-    var s = new Script();
-    s.add(Opcode.OP_0);
-    s.add(Hash.sha256(script.toBuffer()));
-    return s;
-  } else {
-    throw new TypeError('First argument is expected to be a p2sh script');
-  }
-};
-
 /**
  * A new Multisig input script for the given public keys, requiring m of those public keys to spend
  *
@@ -1063,7 +1009,7 @@ Script.prototype.toAddress = function(network) {
 };
 
 /**
- * Analogous to bitcoind's FindAndDelete. Find and delete equivalent chunks,
+ * Analogous to litecoinzd's FindAndDelete. Find and delete equivalent chunks,
  * typically used with push data chunks.  Note that this will find and delete
  * not just the same data, but the same data with the same push data op as
  * produced by default. i.e., if a pushdata in a tx does not use the minimal
@@ -1087,7 +1033,7 @@ Script.prototype.findAndDelete = function(script) {
 };
 
 /**
- * Comes from bitcoind's script interpreter CheckMinimalPush function
+ * Comes from litecoinzd's script interpreter CheckMinimalPush function
  * @returns {boolean} if the chunk {i} is the smallest way to push that particular data.
  */
 Script.prototype.checkMinimalPush = function(i) {
@@ -1120,7 +1066,7 @@ Script.prototype.checkMinimalPush = function(i) {
 };
 
 /**
- * Comes from bitcoind's script DecodeOP_N function
+ * Comes from litecoinzd's script DecodeOP_N function
  * @param {number} opcode
  * @returns {number} numeric value in range of 0 to 16
  */
@@ -1135,7 +1081,7 @@ Script.prototype._decodeOP_N = function(opcode) {
 };
 
 /**
- * Comes from bitcoind's script GetSigOpCount(boolean) function
+ * Comes from litecoinzd's script GetSigOpCount(boolean) function
  * @param {boolean} use current (true) or pre-version-0.6 (false) logic
  * @returns {number} number of signature operations required by this script
  */

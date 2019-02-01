@@ -8,7 +8,7 @@ var networkMaps = {};
 
 /**
  * A network is merely a map containing values that correspond to version
- * numbers for each bitcoin network. Currently only supporting "livenet"
+ * numbers for each litecoinz network. Currently only supporting "livenet"
  * (a.k.a. "mainnet") and "testnet".
  * @constructor
  */
@@ -63,6 +63,8 @@ function get(arg, keys) {
  * @param {Number} data.scripthash - The scripthash prefix
  * @param {Number} data.xpubkey - The extended public key magic
  * @param {Number} data.xprivkey - The extended private key magic
+ * @param {Number} data.zaddr - The Zcash payment address prefix
+ * @param {Number} data.zkey - The Zcash spending key prefix
  * @param {Number} data.networkMagic - The network magic number
  * @param {Number} data.port - The network port
  * @param {Array}  data.dnsSeeds - An array of dns seeds
@@ -79,7 +81,9 @@ function addNetwork(data) {
     privatekey: data.privatekey,
     scripthash: data.scripthash,
     xpubkey: data.xpubkey,
-    xprivkey: data.xprivkey
+    xprivkey: data.xprivkey,
+    zaddr: data.zaddr,
+    zkey: data.zkey
   });
 
   if (data.networkMagic) {
@@ -137,20 +141,17 @@ function removeNetwork(network) {
 addNetwork({
   name: 'livenet',
   alias: 'mainnet',
-  pubkeyhash: 0x00,
+  pubkeyhash: 0x0ab3,
   privatekey: 0x80,
-  scripthash: 0x05,
+  scripthash: 0x0ab8,
   xpubkey: 0x0488b21e,
   xprivkey: 0x0488ade4,
-  networkMagic: 0xf9beb4d9,
-  port: 8333,
+  zaddr: 0x16aa,
+  zkey: 0x8964,
+  networkMagic: 0xd8cfcd93,
+  port: 29333,
   dnsSeeds: [
-    'seed.bitcoin.sipa.be',
-    'dnsseed.bluematt.me',
-    'dnsseed.bitcoin.dashjr.org',
-    'seed.bitcoinstats.com',
-    'seed.bitnodes.io',
-    'bitseed.xf2.org'
+    'dnsseed.litecoinz.org'
   ]
 });
 
@@ -163,18 +164,17 @@ var livenet = get('livenet');
 addNetwork({
   name: 'testnet',
   alias: 'test',
-  pubkeyhash: 0x6f,
+  pubkeyhash: 0x0ea4,
   privatekey: 0xef,
-  scripthash: 0xc4,
+  scripthash: 0x0ea9,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0x0b110907,
-  port: 18333,
+  zaddr: 0x16b6,
+  zkey: 0xb1f8,
+  networkMagic: 0xfe90865d,
+  port: 39333,
   dnsSeeds: [
-    'testnet-seed.bitcoin.petertodd.org',
-    'testnet-seed.bluematt.me',
-    'testnet-seed.alexykot.me',
-    'testnet-seed.bitcoin.schildbach.de'
+    'testnet-dnsseed.litecoinz.org'
   ]
 });
 
@@ -187,13 +187,15 @@ var testnet = get('testnet');
 addNetwork({
   name: 'regtest',
   alias: 'dev',
-  pubkeyhash: 0x6f,
+  pubkeyhash: 0x0ea4,
   privatekey: 0xef,
-  scripthash: 0xc4,
+  scripthash: 0x0ea9,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: 0xfabfb5da,
-  port: 18444,
+  zaddr: 0x16b6,
+  zkey: 0xb1f8,
+  networkMagic: 0xea8c7119,
+  port: 49444,
   dnsSeeds: []
 });
 
