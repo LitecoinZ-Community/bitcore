@@ -22,7 +22,7 @@ The monorepo packages can be updated via git subtrees, then submitted to the ltz
 Example:
 ```
 git co -b feature/ltzcore-node-update
-git subtree pull --prefix=packages/ltzcore-node git@github.com:bitpay/ltzcore-node.git branchToPull
+git subtree pull --prefix=packages/ltzcore-node git@github.com:LitecoinZ-Community/ltzcore-node.git branchToPull
 git push -u origin feature/ltzcore-node-update
 # Create MR from origin:feature/ltzcore-node-update to upstream:ltzcore
 ```
@@ -40,7 +40,7 @@ Packages can be added via Lerna or via git subtrees.
 ```
 lerna import ~/somedir/path-to-ltzcore-repo --flatten
 # OR
-git subtree add --prefix=packages/ltzcore-repo-to-add git@github.com:bitpay/ltzcore-repo-to-add.git branchToAdd
+git subtree add --prefix=packages/ltzcore-repo-to-add git@github.com:LitecoinZ-Community/ltzcore-repo-to-add.git branchToAdd
 ```
 
 This will merge all of the commits into the ltzcore history

@@ -7,7 +7,7 @@ _Requirements_:
 Checkout the repo
 
 ```
-git clone git@github.com:bitpay/ltzcore.git
+git clone git@github.com:LitecoinZ-Community/ltzcore.git
 git checkout master
 npm install
 ```
@@ -24,7 +24,7 @@ npm install
 {
   "ltzcoreNode": {
     "chains": {
-      "BTC": {
+      "LTZ": {
         "mainnet": {
           "chainSource": "p2p",
           "trustedPeers": [
@@ -55,39 +55,6 @@ npm install
             "password": "password"
           }
         }
-      },
-      "BCH": {
-        "mainnet": {
-          "parentChain": "BTC",
-          "forkHeight": 478558,
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 30008
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 30009,
-            "username": "username",
-            "password": "password"
-          }
-        },
-        "regtest": {
-          "chainSource": "p2p",
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 30020
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 30021,
-            "username": "username",
-            "password": "password"
-          }
-        }
       }
     }
   }
@@ -97,10 +64,10 @@ npm install
 </details>
 <br>
 
-**2. Setup Bitcoin Node**
+**2. Setup LitecoinZ Node**
 
 <details>
-<summary>Example Bitcoin Mainnet Config</summary>
+<summary>Example LitecoinZ Mainnet Config</summary>
 <br>
 
 ```
@@ -112,10 +79,7 @@ irc=1
 upnp=1
 
 # Make sure port & rpcport matches the 
-# ltzcore.config.json ports for BTC mainnet
-
-# if using Bitcoin Core v0.17+ prefix
-# [main]
+# ltzcore.config.json ports for LTZ mainnet
 
 port=20008
 rpcport=20009
@@ -127,14 +91,14 @@ rpcpassword=password
 </details>
 <br>
 
-**3. Run Bitcoin node**
+**3. Run LitecoinZ node**
 <details>
-<summary>Example Starting a Bitcoin Node</summary>
+<summary>Example Starting a LitecoinZ Node</summary>
 <br>
   
 ```
-# Path to your bitcoin application and path to the config above
-/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/
+# Path to your litecoinz application and path to the config above
+/Applications/LitecoinZ-Qt.app/Contents/MacOS/LitecoinZ-Qt -datadir=/Users/username/blockchains/litecoinz-core/networks/mainnet/
 ```
 
 </details>
@@ -158,10 +122,10 @@ npm run node
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/bitpay/ltzcore) on the main ltzcore repo for information about how to contribute.
+See [CONTRIBUTING.md](https://github.com/LitecoinZ-Community/ltzcore) on the main ltzcore repo for information about how to contribute.
 
 ## License
 
-Code released under [the MIT license](https://github.com/bitpay/ltzcore/blob/master/LICENSE).
+Code released under [the MIT license](https://github.com/LitecoinZ-Community/ltzcore/blob/master/LICENSE).
 
 Copyright 2015-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.

@@ -15,13 +15,13 @@ services:
       - BITCORE_CONFIG_PATH=/ltzcore/ltzcore-test.config.json
     depends_on:
       - db
-      - bitcoin
+      - litecoinz
 
   db:
     image: mongo
 
-  bitcoin:
-    image: ruimarinho/bitcoin-core:0.16
+  litecoinz:
+    image: ruimarinho/litecoinz-core:0.16
     command:
       -printtoconsole
       -regtest=1

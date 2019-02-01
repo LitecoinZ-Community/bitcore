@@ -8,20 +8,20 @@
       }
     },
     "chains": {
-      "BTC": {
+      "LTZ": {
         "regtest": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
-              "host": "bitcoin",
-              "port": 8332
+              "host": "127.0.0.1",
+              "port": 29333
             }
           ],
           "rpc": {
-            "host": "bitcoin",
-            "port": 8333,
-            "username": "ltzcorenodetest",
-            "password": "local321"
+            "host": "127.0.0.1",
+            "port": 29332,
+            "username": "username",
+            "password": "password"
           }
         }
       }

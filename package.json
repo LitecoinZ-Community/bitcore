@@ -1,8 +1,28 @@
 {
+  "name": "ltzcore",
+  "description": "A full stack for LitecoinZ application",
   "version": "8.0.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/LitecoinZ-Community/ltzcore"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "keywords": [
+    "litecoinz",
+    "ltzcore"
+  ],
   "prettier": {
     "singleQuote": true
   },
+  "contributors": [
+    {
+      "name": "The LitecoinZ Community",
+      "email": "community@litecoinz.org"
+    }
+  ],
   "scripts": {
     "build": "docker build -t ltzcore-node .",
     "postinstall": "npm run bootstrap && npm run compile",
