@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-import * as bitcoreLib from 'ltzcore-lib';
+import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import * as _ from 'lodash';
 import { Observable } from 'rxjs';
@@ -18,8 +18,8 @@ export class SearchProvider {
     switch (type) {
       case 'blockOrTx':
         return Observable.forkJoin(
-          this.searchBlock(input).catch(() => Observable.of(null)),
-          this.searchTx(input).catch(() => Observable.of(null))
+          this.searchBlock(input).catch(err => Observable.of(err)),
+          this.searchTx(input).catch(err => Observable.of(err))
         );
       case 'addr':
         return this.searchAddr(input);
