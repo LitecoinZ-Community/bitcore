@@ -2,7 +2,7 @@
   "name": "ltzcore-wallet",
   "description": "A CLI Mutisig HD LitecoinZ Wallet, demo for Ltzcore Wallet Service",
   "author": "BitPay Inc",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "keywords": [
     "litecoinz",
     "copay",
@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "async": "^2.5.0",
-    "ltzcore-lib": "^8.0.0",
-    "ltzcore-wallet-client": "^8.0.0",
+    "ltzcore-lib": "^8.0.1",
+    "ltzcore-wallet-client": "^8.0.1",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
     "moment": "^2.9.0",

@@ -1,7 +1,7 @@
 {
   "name": "ltzcore",
   "description": "A full stack for LitecoinZ application",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "license": "MIT",
   "repository": {
     "type": "git",

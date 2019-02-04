@@ -1,6 +1,6 @@
 {
   "name": "ltzcore-p2p",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "description": "Interface to the litecoinz P2P network for ltzcore",
   "main": "index.js",
   "scripts": {
@@ -25,14 +25,14 @@
     }
   ],
   "dependencies": {
-    "ltzcore-lib": "^8.0.0",
+    "ltzcore-lib": "^8.0.1",
     "bcoin": "1.0.0-beta.12",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "ltzcore-build": "^8.0.0",
+    "ltzcore-build": "^8.0.1",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",

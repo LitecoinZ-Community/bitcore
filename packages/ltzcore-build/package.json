@@ -1,6 +1,6 @@
 {
   "name": "ltzcore-build",
-  "version": "8.0.0",
+  "version": "8.0.1",
   "description": "A helper for common tasks to build ltzcore modules",
   "main": "index.js",
   "scripts": {
