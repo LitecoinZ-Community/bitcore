@@ -1,5 +1,5 @@
-export type Protocol = 'BTC' | 'BCH';
-export type Code = 'BTC' | 'BCH' | 'tBTC' | 'tBCH';
+export type Protocol = 'LTZ';
+export type Code = 'LTZ' | 'tLTZ';
 export type Network = 'mainnet' | 'testnet' | 'regtest';
 
 export interface Chain {
@@ -9,37 +9,21 @@ export interface Chain {
   protocol: Protocol;
 }
 
-export const BCH: Chain = {
-  code: 'BCH',
-  name: 'Bitcoin Cash',
+export const LTZ: Chain = {
+  code: 'LTZ',
+  name: 'LitecoinZ',
   network: 'mainnet',
-  protocol: 'BCH'
+  protocol: 'LTZ'
 };
 
-export const tBCH: Chain = {
-  code: 'tBCH',
-  name: 'Bitcoin Cash Testnet',
+export const tLTZ: Chain = {
+  code: 'tLTZ',
+  name: 'LitecoinZ Testnet',
   network: 'testnet',
-  protocol: 'BCH'
-};
-
-export const BTC: Chain = {
-  code: 'BTC',
-  name: 'Bitcoin',
-  network: 'mainnet',
-  protocol: 'BTC'
-};
-
-export const tBTC: Chain = {
-  code: 'tBTC',
-  name: 'Bitcoin Testnet',
-  network: 'testnet',
-  protocol: 'BTC'
+  protocol: 'LTZ'
 };
 
 export const Chains = {
-  BCH,
-  tBCH,
-  BTC,
-  tBTC
+  LTZ,
+  tLTZ
 };

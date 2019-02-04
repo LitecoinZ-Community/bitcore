@@ -1,4 +1,4 @@
-import { BCH, BTC, Chain, tBCH, tBTC } from './chains';
+import { LTZ, Chain, tLTZ } from './chains';
 
 export interface ChainDenomination {
   [k: string]: Unit;
@@ -12,7 +12,7 @@ export interface Unit {
 
 export type RateListing = Unit[];
 
-const generateBitcoinDenomination = (chain: Chain): ChainDenomination => ({
+const generateDenomination = (chain: Chain): ChainDenomination => ({
   [chain.code]: {
     code: chain.code,
     name: chain.name,
@@ -30,14 +30,10 @@ const generateBitcoinDenomination = (chain: Chain): ChainDenomination => ({
   }
 });
 
-export const BCHDenomination = generateBitcoinDenomination(BCH);
-export const tBCHDenomination = generateBitcoinDenomination(tBCH);
-export const BTCDenomination = generateBitcoinDenomination(BTC);
-export const tBTCDenomination = generateBitcoinDenomination(tBTC);
+export const LTZDenomination = generateDenomination(LTZ);
+export const tLTZDenomination = generateDenomination(tLTZ);
 
 export const ChainDenominations = {
-  BCH: BCHDenomination,
-  tBCH: tBCHDenomination,
-  BTC: BTCDenomination,
-  tBTC: tBTCDenomination
+  LTZ: LTZDenomination,
+  tLTZ: tLTZDenomination
 };

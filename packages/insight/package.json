@@ -1,11 +1,11 @@
 {
-  "name": "@bitpay/insight",
-  "version": "8.0.0",
-  "description": "A blockchain explorer for Bitcore",
-  "homepage": "https://github.com/bitpay/bitcore",
-  "repository": "git://github.com/bitpay/bitcore.git",
+  "name": "@LitecoinZ-Community/insight",
+  "version": "8.0.1",
+  "description": "A blockchain explorer for LitecoinZ",
+  "homepage": "https://github.com/LitecoinZ-Community/ltzcore",
+  "repository": "git://github.com/LitecoinZ-Community/ltzcore.git",
   "bugs": {
-    "url": "https://github.com/bitpay/bitcore/issues"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore/issues"
   },
   "license": "MIT",
   "keywords": [
@@ -13,8 +13,8 @@
     "insight-ui",
     "blockchain",
     "block explorer",
-    "bitcoin",
-    "bitcore",
+    "litecoinz",
+    "ltzcore",
     "API"
   ],
   "config": {

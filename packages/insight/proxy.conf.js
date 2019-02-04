@@ -5,7 +5,7 @@ try {
   config = {
     '/api': {
       target: {
-        host: 'api.bitcore.io',
+        host: 'api.litecoinz.org',
         protocol: 'https:',
         port: 443
       },

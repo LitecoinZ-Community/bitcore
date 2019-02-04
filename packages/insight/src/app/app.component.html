@@ -43,48 +43,22 @@
 
                         <ion-item
                             [routerDirection]="'root'"
-                            [routerLink]="['/BCH']"
+                            [routerLink]="['/LTZ']"
                             routerLinkActive="active"
                         >
-                            <ion-label>BCH</ion-label>
+                            <ion-label>LTZ</ion-label>
                         </ion-item>
                         <ion-item
                             [routerDirection]="'root'"
-                            [routerLink]="['/tBCH']"
+                            [routerLink]="['/tLTZ']"
                             routerLinkActive="active"
                         >
-                            <ion-label>tBCH</ion-label>
-                        </ion-item>
-                        <ion-item
-                            [routerDirection]="'root'"
-                            [routerLink]="['/BTC']"
-                            routerLinkActive="active"
-                        >
-                            <ion-label>BTC</ion-label>
-                        </ion-item>
-                        <ion-item
-                            [routerDirection]="'root'"
-                            [routerLink]="['/tBTC']"
-                            routerLinkActive="active"
-                        >
-                            <ion-label>tBTC</ion-label>
+                            <ion-label>tLTZ</ion-label>
                         </ion-item>
 
                         <ion-item-divider>
                             <ion-label>Display Currency</ion-label>
                         </ion-item-divider>
-                        <ion-item
-                            (click)="config.displayValueCode$.next('BCH')"
-                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'BCH'}"
-                        >
-                            <ion-label>BCH</ion-label>
-                        </ion-item>
-                        <ion-item
-                            (click)="config.displayValueCode$.next('BCH_bits')"
-                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'BCH_bits'}"
-                        >
-                            <ion-label>Bits (BCH)</ion-label>
-                        </ion-item>
                         <ion-item
                             (click)="config.displayValueCode$.next('BTC')"
                             [ngClass]="{'active': (config.displayValueCode$ | async) === 'BTC'}"

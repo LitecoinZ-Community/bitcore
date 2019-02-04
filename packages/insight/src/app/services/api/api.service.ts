@@ -26,15 +26,11 @@ const stringifyForQuery = (object: any) =>
   );
 
 const temporaryChainBase = (chain: Chain) =>
-  chain.code === 'BCH'
-    ? 'BCH/mainnet'
-    : chain.code === 'tBCH'
-      ? 'BCH/testnet'
-      : chain.code === 'BTC'
-        ? 'BTC/mainnet'
-        : chain.code === 'tBTC'
-          ? 'BTC/testnet'
-          : 'unknownTemporaryChainBase';
+  chain.code === 'LTZ'
+    ? 'LTZ/mainnet'
+    : chain.code === 'tLTZ'
+      ? 'LTZ/testnet'
+    : 'unknownTemporaryChainBase';
 
 const temporaryChainNetworkToCode = (chainNetwork: {
   chain: string;
@@ -80,7 +76,7 @@ export class ApiService {
    * Usage example: `${apiBase}/route`
    */
   apiBase = (chain: Chain) =>
-    // TODO: pull Chain type into Bitcore
+    // TODO: pull Chain type into Ltzcore
     // `${this.config.apiPrefix$.getValue()}/${chain.code}/${chain.network}`;
     `${this.config.apiPrefix$.getValue()}/${temporaryChainBase(chain)}`;
 

@@ -10,11 +10,11 @@ export const environment = {
   /**
    * Everything before the root API route itself, without a trailing `/`.
    *
-   * For absolute paths, include `http`/`https`. (E.g. `https://api.bitcore.io/api`)
+   * For absolute paths, include `http`/`https`. (E.g. `https://api.litecoinz.org/api`)
    *
    * For relative paths, begin with a `/`. (E.g. `/api`)
    *
-   * Usage example: `${apiPrefix}/BCH/mainnet/block/tip`
+   * Usage example: `${apiPrefix}/LTZ/mainnet/block/tip`
    */
   apiPrefix: '/api',
   production: false,

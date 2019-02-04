@@ -2,19 +2,12 @@
     <ng-container *ngIf="result.value !== undefined; else rateNotAvailable">
         <ng-container *ngIf="result.approximation">≈</ng-container>
         <ng-container ngSwitch="{{result.unit}}">
-            <ng-container *ngSwitchCase="'BCH'">{{result.value | number:'1.0-8'}} BCH</ng-container>
-            <ng-container *ngSwitchCase="'BCH_bits'">
-                {{result.value | number:'1.0-2'}} {{result.value === 1? 'bit' : 'bits'}} (BCH)
+            <ng-container *ngSwitchCase="'LTZ'">{{result.value | number:'1.0-8'}} LTZ</ng-container>
+            <ng-container *ngSwitchCase="'LTZ_bits'">
+                {{result.value | number:'1.0-2'}} {{result.value === 1? 'bit' : 'bits'}} (LTZ)
             </ng-container>
-            <ng-container *ngSwitchCase="'BCH_satoshis'">
-                {{result.value | number:'1.0-0'}} {{result.value === 1? 'satoshi' : 'satoshis'}} (BCH)
-            </ng-container>
-            <ng-container *ngSwitchCase="'BTC'">{{result.value | number:'1.0-8'}} BTC</ng-container>
-            <ng-container *ngSwitchCase="'BTC_bits'">
-                {{result.value | number:'1.0-2'}} {{result.value === 1? 'bit' : 'bits'}} (BTC)
-            </ng-container>
-            <ng-container *ngSwitchCase="'BTC_satoshis'">
-                {{result.value | number:'1.0-0'}} {{result.value === 1? 'satoshi' : 'satoshis'}} (BTC)
+            <ng-container *ngSwitchCase="'LTZ_satoshis'">
+                {{result.value | number:'1.0-0'}} {{result.value === 1? 'satoshi' : 'satoshis'}} (LTZ)
             </ng-container>
             <ng-container *ngSwitchDefault>
                 {{displaySymbol(result.unit)}}{{result.value | currency:result.unit:''}} {{result.unit}}
