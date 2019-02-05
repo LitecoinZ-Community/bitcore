@@ -18,8 +18,8 @@ export interface NetworkSettings {
 @Injectable()
 export class ApiProvider {
   public networkSettings = new BehaviorSubject<NetworkSettings>({
-    availableNetworks: [{ chain: 'BTC', network: 'mainnet' }],
-    selectedNetwork: { chain: 'BTC', network: 'mainnet' }
+    availableNetworks: [{ chain: 'LTZ', network: 'mainnet' }],
+    selectedNetwork: { chain: 'LTZ', network: 'mainnet' }
   });
 
   constructor(

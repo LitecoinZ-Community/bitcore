@@ -21,8 +21,8 @@ describe('CurrencyProvider', () => {
 
   it('initialises', () => {
     expect(currency).not.toBeNull();
-    expect(currency.defaultCurrency).toBe('BTC');
-    expect(currency.currencySymbol).toBe('BTC');
+    expect(currency.defaultCurrency).toBe('LTZ');
+    expect(currency.currencySymbol).toBe('LTZ');
     expect(currency.factor).toBe(1);
   });
 
@@ -31,12 +31,12 @@ describe('CurrencyProvider', () => {
     expect(currency.currencySymbol).toBe('USD');
     expect(currency.factor).toEqual(1);
 
-    currency.setCurrency('BTC');
-    expect(currency.currencySymbol).toBe('BTC');
+    currency.setCurrency('LTZ');
+    expect(currency.currencySymbol).toBe('LTZ');
     expect(currency.factor).toEqual(1);
 
-    currency.setCurrency('mBTC');
-    expect(currency.currencySymbol).toBe('mBTC');
+    currency.setCurrency('mLTZ');
+    expect(currency.currencySymbol).toBe('mLTZ');
     expect(currency.factor).toEqual(1000);
 
     currency.setCurrency('bits');
@@ -65,10 +65,10 @@ describe('CurrencyProvider', () => {
 
   it('gets proper conversion after changing currency', () => {
     let aFloat: number = 12345.09876543;
-    expect(currency.getConversion(aFloat)).toBe('12345.09876543 BTC');
+    expect(currency.getConversion(aFloat)).toBe('12345.09876543 LTZ');
 
-    currency.setCurrency('mBTC');
-    expect(currency.getConversion(aFloat)).toBe('12345098.76543 mBTC');
+    currency.setCurrency('mLTZ');
+    expect(currency.getConversion(aFloat)).toBe('12345098.76543 mLTZ');
 
     currency.setCurrency('bits');
     expect(currency.getConversion(aFloat)).toBe('12345098765.43 bits');

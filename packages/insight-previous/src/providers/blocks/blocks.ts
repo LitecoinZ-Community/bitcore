@@ -101,7 +101,7 @@ export class BlocksProvider {
   }
 
   /**
-   * example: http://localhost:8100/api/BTC/regtest/block?since=582&limit=100&paging=height&direction=1
+   * example: http://localhost:8100/api/LTZ/regtest/block?since=582&limit=100&paging=height&direction=1
    */
   public pageBlocks(
     since: number,

@@ -5,8 +5,7 @@ import {
   Input,
   Output
 } from '@angular/core';
-import * as bitcoreLib from 'bitcore-lib';
-import * as bitcoreLibCash from 'bitcore-lib-cash';
+import * as bitcoreLib from 'ltzcore-lib';
 import {
   ActionSheetController,
   App,
@@ -171,7 +170,7 @@ export class HeadNavComponent {
 
   public extractAddress(address: string): string {
     const extractedAddress = address
-      .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
+      .replace(/^(litecoinz:)/i, '')
       .replace(/\?.*/, '');
     return extractedAddress || address;
   }
@@ -202,15 +201,10 @@ export class HeadNavComponent {
     const network = this.config.network;
     const addr = this.extractAddress(inputValue);
 
-    if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
+    if (coin.toLowerCase() === 'ltz' && network === 'mainnet') {
       return this.isValidBitcoinMainnetAddress(addr);
-    } else if (coin.toLowerCase() === 'btc' && network === 'testnet') {
+    } else if (coin.toLowerCase() === 'ltz' && network === 'testnet') {
       return this.isValidBitcoinTestnetAddress(addr);
-    } else if (coin.toLowerCase() === 'bch' && network === 'mainnet') {
-      return (
-        this.isValidBitcoinCashMainnetAddress(addr) ||
-        this.isValidBitcoinCashLegacyMainnetAddress(addr)
-      );
     }
   }
 
@@ -219,14 +213,6 @@ export class HeadNavComponent {
   }
   private isValidBitcoinTestnetAddress(data: string): boolean {
     return !!bitcoreLib.Address.isValid(data, 'testnet');
-  }
-
-  private isValidBitcoinCashLegacyMainnetAddress(data: string): boolean {
-    return !!bitcoreLib.Address.isValid(data, 'mainnet');
-  }
-
-  private isValidBitcoinCashMainnetAddress(data: string): boolean {
-    return !!bitcoreLibCash.Address.isValid(data, 'mainnet');
   }
 
   private isValidBlockIndex(inputValue): boolean {

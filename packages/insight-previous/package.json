@@ -1,20 +1,20 @@
 {
-  "name": "@bitpay/insight-previous",
-  "description": "A blockchain explorer for Bitcore",
-  "version": "8.0.0",
-  "repository": "git://github.com/bitpay/bitcore.git",
+  "name": "@LitecoinZ-Community/insight-previous",
+  "description": "A blockchain explorer for LitecoinZ",
+  "version": "8.0.1",
+  "repository": "git://github.com/LitecoinZ-Community/ltzcore.git",
   "bugs": {
-    "url": "https://github.com/bitpay/bitcore/issues"
+    "url": "https://github.com/LitecoinZ-Community/ltzcore/issues"
   },
-  "homepage": "https://github.com/bitpay/bitcore",
+  "homepage": "https://github.com/LitecoinZ-Community/ltzcore",
   "license": "MIT",
   "keywords": [
     "insight",
     "insight-ui",
     "blockchain",
     "block explorer",
-    "bitcoin",
-    "bitcore",
+    "litecoinz",
+    "ltzcore",
     "API"
   ],
   "config": {
@@ -25,7 +25,7 @@
   },
   "scripts": {
     "clean": "ionic-app-scripts clean",
-    "build:prod": "ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build --prod",
+    "build:prod": "ENV=prod CHAIN=LTZ NETWORK=mainnet API_PREFIX=https://api.litecoinz.org/api npm run ionic:build --prod",
     "serve:prod": "npm run clean && npm run build:prod && npm run serve",
     "serve": "serve www",
     "ionic:build": "ionic-app-scripts build",
@@ -46,8 +46,7 @@
     "@angular/platform-browser-dynamic": "4.4.7",
     "angular2-moment": "1.6.0",
     "angular2-qrcode": "2.0.1",
-    "bitcore-lib": "0.16.0",
-    "bitcore-lib-cash": "0.19.0",
+    "ltzcore-lib": "^8.0.1",
     "ionic-angular": "3.9.2",
     "ionicons": "3.0.0",
     "lodash": "4.17.11",

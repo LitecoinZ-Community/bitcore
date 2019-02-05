@@ -1,13 +1,13 @@
 # Insight
 
-**A blockchain explorer for Bitcore.**
+**A blockchain explorer for LitecoinZ.**
 
 ## Quick Start
 
-To get started, first [start a `bitcore` node](../../readme.md), then run insight:
+To get started, first [start a `ltzcore` node](../../readme.md), then run insight:
 
 ```bash
-cd bitcore
+cd ltzcore
 npm start insight
 ```
 
@@ -16,5 +16,5 @@ npm start insight
 To use a specific network / chain set the `NETWORK` and `CHAIN` environment variable, e.g.:
 
 ```bash
-NETWORK=testnet CHAIN=BCH npm start
+NETWORK=testnet CHAIN=LTZ npm start
 ```
