@@ -2,6 +2,9 @@
   "extends": ["tslint:latest", "tslint-angular", "tslint-config-prettier"],
   "rules": {
     "interface-name": [true, "never-prefix"],
-    "component-class-suffix": [true, "Component", "Page", "App"]
+    "component-class-suffix": [true, "Component", "Page", "App"],
+    "only-arrow-functions": false,
+    "no-var-keyword": false,
+    "prefer-const": false
   }
 }

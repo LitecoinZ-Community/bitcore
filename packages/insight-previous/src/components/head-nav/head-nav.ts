@@ -5,7 +5,6 @@ import {
   Input,
   Output
 } from '@angular/core';
-import * as bitcoreLib from 'ltzcore-lib';
 import {
   ActionSheetController,
   App,
@@ -14,6 +13,7 @@ import {
   ToastController
 } from 'ionic-angular';
 import * as _ from 'lodash';
+import * as bitcoreLib from 'ltzcore-lib';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';

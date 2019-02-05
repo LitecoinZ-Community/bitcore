@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-import * as bitcoreLib from 'ltzcore-lib';
 import * as _ from 'lodash';
+import * as bitcoreLib from 'ltzcore-lib';
 import { Observable } from 'rxjs';
 import { ApiProvider, ChainNetwork } from '../api/api';
 

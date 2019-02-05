@@ -46,6 +46,8 @@
     "@angular/platform-browser-dynamic": "4.4.7",
     "angular2-moment": "1.6.0",
     "angular2-qrcode": "2.0.1",
+    "blake2b": "https://github.com/BitGo/blake2b.git",
+    "bs58": "4.0.1",
     "ltzcore-lib": "^8.0.1",
     "ionic-angular": "3.9.2",
     "ionicons": "3.0.0",
